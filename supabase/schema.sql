@@ -20,6 +20,19 @@ create table if not exists public.clients (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.products (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  name text not null,
+  description text,
+  unit text not null default 'unit',
+  unit_price numeric(14,2) not null default 0 check (unit_price >= 0),
+  tax_rate numeric(5,2) not null default 0 check (tax_rate >= 0 and tax_rate <= 100),
+  active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create table if not exists public.invoices (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -65,6 +78,7 @@ create table if not exists public.cpu_declarations (
 
 alter table public.profiles enable row level security;
 alter table public.clients enable row level security;
+alter table public.products enable row level security;
 alter table public.invoices enable row level security;
 alter table public.invoice_items enable row level security;
 alter table public.expenses enable row level security;
@@ -75,6 +89,7 @@ create policy "profiles_owner_insert" on public.profiles for insert to authentic
 create policy "profiles_owner_update" on public.profiles for update to authenticated using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
 
 create policy "clients_owner_all" on public.clients for all to authenticated using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
+create policy "products_owner_all" on public.products for all to authenticated using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
 create policy "invoices_owner_all" on public.invoices for all to authenticated using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
 create policy "expenses_owner_all" on public.expenses for all to authenticated using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
 create policy "cpu_owner_all" on public.cpu_declarations for all to authenticated using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
@@ -84,6 +99,7 @@ using (exists (select 1 from public.invoices i where i.id = invoice_id and i.use
 with check (exists (select 1 from public.invoices i where i.id = invoice_id and i.user_id = (select auth.uid())));
 
 create index if not exists clients_user_id_idx on public.clients(user_id);
+create index if not exists products_user_id_idx on public.products(user_id);
 create index if not exists invoices_user_id_idx on public.invoices(user_id);
 create index if not exists invoices_client_id_idx on public.invoices(client_id);
 create index if not exists invoice_items_invoice_id_idx on public.invoice_items(invoice_id);
