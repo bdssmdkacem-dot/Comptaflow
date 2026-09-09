@@ -3,10 +3,10 @@ import 'package:provider/provider.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/locale_provider.dart';
 import '../clients/clients_screen.dart';
 import '../cpu/cpu_screen.dart';
 import '../invoices/invoices_screen.dart';
+import '../products/products_screen.dart';
 import '../settings/settings_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -26,6 +26,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _Home(l10n: l10n),
       const InvoicesScreen(),
       const ClientsScreen(),
+      const ProductsScreen(),
       const CpuScreen(),
       const SettingsScreen(),
     ];
@@ -39,6 +40,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           NavigationDestination(icon: const Icon(Icons.dashboard_outlined), label: l10n.dashboard),
           NavigationDestination(icon: const Icon(Icons.receipt_long_outlined), label: l10n.invoices),
           NavigationDestination(icon: const Icon(Icons.people_outline), label: l10n.clients),
+          const NavigationDestination(icon: Icon(Icons.inventory_2_outlined), label: 'Produits'),
           NavigationDestination(icon: const Icon(Icons.calculate_outlined), label: l10n.cpu),
           NavigationDestination(icon: const Icon(Icons.settings_outlined), label: l10n.settings),
         ],
@@ -67,6 +69,7 @@ class _Home extends StatelessWidget {
           const SizedBox(height: 24),
           Card(child: ListTile(leading: const Icon(Icons.receipt_long), title: Text(l10n.invoices), subtitle: const Text('0'))),
           Card(child: ListTile(leading: const Icon(Icons.people), title: Text(l10n.clients), subtitle: const Text('0'))),
+          Card(child: ListTile(leading: const Icon(Icons.inventory_2), title: const Text('Produits & services'), subtitle: const Text('Catalogue'))),
           Card(child: ListTile(leading: const Icon(Icons.calculate), title: Text(l10n.cpu), subtitle: const Text('—'))),
         ],
       ),
