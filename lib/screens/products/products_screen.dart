@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 import '../../data/models/product.dart';
 import '../../data/repositories/product_repo.dart';
