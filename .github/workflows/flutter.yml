@@ -36,65 +36,46 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
 
-          gradle_kts = Path('android/app/build.gradle.kts')
-          gradle_groovy = Path('android/app/build.gradle')
+          path = Path('android/app/build.gradle.kts')
+          if not path.exists():
+              path = Path('android/app/build.gradle')
 
-          if gradle_kts.exists():
-              path = gradle_kts
-              text = path.read_text()
+          if not path.exists():
+              raise SystemExit('No Android app Gradle file found')
 
+          text = path.read_text()
+
+          if path.suffix == '.kts':
               if 'isCoreLibraryDesugaringEnabled = true' not in text:
                   marker = 'android {\n'
                   if marker not in text:
-                      raise SystemExit('android { block not found in build.gradle.kts')
+                      raise SystemExit('android { block not found')
                   text = text.replace(
                       marker,
                       marker + '    compileOptions {\n        isCoreLibraryDesugaringEnabled = true\n    }\n\n',
                       1,
                   )
 
-              if 'coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:' not in text:
-                  marker = 'dependencies {\n'
-                  if marker not in text:
-                      raise SystemExit('dependencies { block not found in build.gradle.kts')
-                  text = text.replace(
-                      marker,
-                      marker + '    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")\n',
-                      1,
-                  )
-
-              path.write_text(text)
-              print('Configured android/app/build.gradle.kts')
-
-          elif gradle_groovy.exists():
-              path = gradle_groovy
-              text = path.read_text()
-
+              dependency = 'coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")'
+              if dependency not in text:
+                  text += '\n\ndependencies {\n    ' + dependency + '\n}\n'
+          else:
               if 'coreLibraryDesugaringEnabled true' not in text:
                   marker = 'android {\n'
                   if marker not in text:
-                      raise SystemExit('android { block not found in build.gradle')
+                      raise SystemExit('android { block not found')
                   text = text.replace(
                       marker,
                       marker + '    compileOptions {\n        coreLibraryDesugaringEnabled true\n    }\n\n',
                       1,
                   )
 
-              if "coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:" not in text:
-                  marker = 'dependencies {\n'
-                  if marker not in text:
-                      raise SystemExit('dependencies { block not found in build.gradle')
-                  text = text.replace(
-                      marker,
-                      marker + "    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'\n",
-                      1,
-                  )
+              dependency = "coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'"
+              if dependency not in text:
+                  text += '\n\ndependencies {\n    ' + dependency + '\n}\n'
 
-              path.write_text(text)
-              print('Configured android/app/build.gradle')
-
-          else:
-              raise SystemExit('No Android app Gradle file found')
+          path.write_text(text)
+          print(f'Configured {path}')
           PY
 
       - name: Install dependencies
