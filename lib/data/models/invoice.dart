@@ -36,3 +36,45 @@ class InvoiceModel {
         pdfUrl: map['pdf_url'] as String?,
       );
 }
+
+class InvoiceItemModel {
+  const InvoiceItemModel({
+    required this.id,
+    required this.invoiceId,
+    required this.description,
+    required this.quantity,
+    required this.unitPrice,
+    required this.taxRate,
+  });
+
+  final String id;
+  final String invoiceId;
+  final String description;
+  final double quantity;
+  final double unitPrice;
+  final double taxRate;
+
+  double get totalHt => quantity * unitPrice;
+  double get totalTva => totalHt * taxRate / 100;
+  double get totalTtc => totalHt + totalTva;
+
+  factory InvoiceItemModel.fromMap(Map<String, dynamic> map) => InvoiceItemModel(
+        id: map['id'] as String,
+        invoiceId: map['invoice_id'] as String,
+        description: map['description'] as String,
+        quantity: (map['quantity'] as num).toDouble(),
+        unitPrice: (map['unit_price'] as num).toDouble(),
+        taxRate: (map['tax_rate'] as num?)?.toDouble() ?? 0,
+      );
+}
+
+class InvoiceDetails {
+  const InvoiceDetails({required this.invoice, required this.items});
+
+  final InvoiceModel invoice;
+  final List<InvoiceItemModel> items;
+
+  double get calculatedHt => items.fold(0, (sum, item) => sum + item.totalHt);
+  double get calculatedTva => items.fold(0, (sum, item) => sum + item.totalTva);
+  double get calculatedTtc => calculatedHt + calculatedTva;
+}
