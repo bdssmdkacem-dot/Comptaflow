@@ -26,6 +26,9 @@ jobs:
       - name: Create Android platform
         run: flutter create --platforms=android --project-name comptaflow .
 
+      - name: Remove generated placeholder test
+        run: rm -f test/widget_test.dart
+
       - name: Install dependencies
         run: flutter pub get
 
