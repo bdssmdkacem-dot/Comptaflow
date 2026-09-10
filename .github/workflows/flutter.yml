@@ -26,9 +26,6 @@ jobs:
       - name: Create Android platform
         run: flutter create --platforms=android --project-name comptaflow .
 
-      - name: Remove generated placeholder test
-        run: rm -f test/widget_test.dart
-
       - name: Install dependencies
         run: flutter pub get
 
@@ -39,7 +36,12 @@ jobs:
         run: flutter analyze
 
       - name: Test
-        run: flutter test
+        run: |
+          if find test -type f -name '*_test.dart' -print -quit 2>/dev/null | grep -q .; then
+            flutter test
+          else
+            echo 'No Flutter test files found; skipping flutter test.'
+          fi
 
       - name: Build debug APK
         run: >-
