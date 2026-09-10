@@ -26,7 +26,7 @@ class _CpuScreenState extends State<CpuScreen> {
       children: [
         Text(l10n.cpu, style: Theme.of(context).textTheme.headlineMedium),
         const SizedBox(height: 16),
-        DropdownButtonFormField<String>(value: _activity, items: const [
+        DropdownButtonFormField<String>(initialValue: _activity, items: const [
           DropdownMenuItem(value: 'services', child: Text('Services — 10%')),
           DropdownMenuItem(value: 'artisanal', child: Text('Artisanal — 5%')),
           DropdownMenuItem(value: 'commercial', child: Text('Commercial — 3%')),
