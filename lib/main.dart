@@ -39,7 +39,10 @@ class ComptaflowApp extends StatelessWidget {
           locale: locale.locale,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          theme: ThemeData(useMaterial3: true, colorSchemeSeed: const Color(0xFFB8892E)),
+          theme: ThemeData(
+            useMaterial3: true,
+            colorSchemeSeed: const Color(0xFFB8892E),
+          ),
           home: const AuthGate(),
         ),
       ),
@@ -60,6 +63,7 @@ class AuthGate extends StatelessWidget {
 
 class _ProfileGate extends StatefulWidget {
   const _ProfileGate();
+
   @override
   State<_ProfileGate> createState() => _ProfileGateState();
 }
@@ -76,18 +80,17 @@ class _ProfileGateState extends State<_ProfileGate> {
   Future<bool> _hasProfile() async {
     final user = SupabaseClientService.client.auth.currentUser;
     if (user == null) return false;
-    try {
-      final row = await SupabaseClientService.client
-          .from('profiles')
-          .select('user_id')
-          .eq('user_id', user.id)
-          .maybeSingle();
-      return row != null;
-    } catch (_) {
-      // Until the first database migration is applied, let the user complete
-      // the profile rather than exposing a broken dashboard.
-      return false;
-    }
+
+    final row = await SupabaseClientService.client
+        .from('profiles')
+        .select('user_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+    return row != null;
+  }
+
+  void _refreshProfile() {
+    setState(() => _future = _hasProfile());
   }
 
   @override
@@ -96,9 +99,46 @@ class _ProfileGateState extends State<_ProfileGate> {
       future: _future,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
         }
-        return snapshot.data == true ? const DashboardScreen() : const CompleteProfileScreen();
+
+        if (snapshot.hasError) {
+          return Scaffold(
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.cloud_off_outlined, size: 48),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Impossible de vérifier le profil.',
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      '${snapshot.error}',
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 20),
+                    FilledButton.icon(
+                      onPressed: _refreshProfile,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Réessayer'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+
+        return snapshot.data == true
+            ? const DashboardScreen()
+            : CompleteProfileScreen(onSaved: _refreshProfile);
       },
     );
   }
