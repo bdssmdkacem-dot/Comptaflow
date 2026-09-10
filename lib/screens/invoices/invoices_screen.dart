@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../data/models/client.dart';
 import '../../data/models/invoice.dart';
 import '../../data/repositories/client_repo.dart';
 import '../../data/repositories/invoice_repo.dart';
@@ -30,7 +29,9 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
     final products = await ProductRepository().list();
     if (!mounted) return;
 
-    final number = TextEditingController(text: 'FAC-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}');
+    final number = TextEditingController(
+      text: 'FAC-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}',
+    );
     String? clientId;
     final quantity = TextEditingController(text: '1');
     final price = TextEditingController();
@@ -169,7 +170,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                     leading: const CircleAvatar(child: Icon(Icons.receipt_long)),
                     title: Text(invoice.invoiceNumber),
                     subtitle: Text('${invoice.status} • ${invoice.date.day.toString().padLeft(2, '0')}/${invoice.date.month.toString().padLeft(2, '0')}/${invoice.date.year}'),
-                    trailing: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.end, children: [Text('${invoice.totalTtc.toStringAsFixed(2)} DH', style: const TextStyle(fontWeight: FontWeight.bold)), Text('TTC')]),
+                    trailing: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.end, children: [Text('${invoice.totalTtc.toStringAsFixed(2)} DH', style: const TextStyle(fontWeight: FontWeight.bold)), const Text('TTC')]),
                   ),
                 );
               },
