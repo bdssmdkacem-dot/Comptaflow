@@ -16,6 +16,7 @@ class InvoiceLineInput {
 
   double get totalHt => quantity * unitPrice;
   double get totalTva => totalHt * taxRate / 100;
+  double get totalTtc => totalHt + totalTva;
 }
 
 class InvoiceRepository {
@@ -46,8 +47,13 @@ class InvoiceRepository {
     );
   }
 
+  Future<String> nextInvoiceNumber() async {
+    final result = await SupabaseClientService.client.rpc('next_invoice_number');
+    return result as String;
+  }
+
   Future<InvoiceModel> create({
-    required String invoiceNumber,
+    String? invoiceNumber,
     String? clientId,
     required DateTime date,
     required List<InvoiceLineInput> items,
@@ -58,6 +64,9 @@ class InvoiceRepository {
     if (items.isEmpty) throw ArgumentError('Invoice must contain at least one line');
     _validate(items);
 
+    final number = invoiceNumber?.trim().isNotEmpty == true
+        ? invoiceNumber!.trim()
+        : await nextInvoiceNumber();
     final totalHt = items.fold<double>(0, (sum, item) => sum + item.totalHt);
     final totalTva = items.fold<double>(0, (sum, item) => sum + item.totalTva);
     final totalTtc = totalHt + totalTva;
@@ -65,7 +74,7 @@ class InvoiceRepository {
     final row = await client.from('invoices').insert({
       'user_id': user.id,
       'client_id': clientId,
-      'invoice_number': invoiceNumber.trim(),
+      'invoice_number': number,
       'date': date.toIso8601String().split('T').first,
       'total_ht': totalHt,
       'total_tva': totalTva,
@@ -91,14 +100,75 @@ class InvoiceRepository {
     return invoice;
   }
 
+  Future<void> updateDraft(
+    String invoiceId, {
+    required String invoiceNumber,
+    String? clientId,
+    required DateTime date,
+    required List<InvoiceLineInput> items,
+  }) async {
+    if (items.isEmpty) throw ArgumentError('Invoice must contain at least one line');
+    _validate(items);
+    final client = SupabaseClientService.client;
+    final details = await getDetails(invoiceId);
+    if (details.invoice.status != 'draft') {
+      throw StateError('Only draft invoices can be edited');
+    }
+
+    final totalHt = items.fold<double>(0, (sum, item) => sum + item.totalHt);
+    final totalTva = items.fold<double>(0, (sum, item) => sum + item.totalTva);
+    final totalTtc = totalHt + totalTva;
+
+    await client.from('invoices').update({
+      'invoice_number': invoiceNumber.trim(),
+      'client_id': clientId,
+      'date': date.toIso8601String().split('T').first,
+      'total_ht': totalHt,
+      'total_tva': totalTva,
+      'total_ttc': totalTtc,
+    }).eq('id', invoiceId);
+
+    await client.from('invoice_items').delete().eq('invoice_id', invoiceId);
+    await client.from('invoice_items').insert(
+      items.map((item) => {
+        'invoice_id': invoiceId,
+        'description': item.description.trim(),
+        'quantity': item.quantity,
+        'unit_price': item.unitPrice,
+        'tax_rate': item.taxRate,
+      }).toList(),
+    );
+  }
+
   Future<void> delete(String invoiceId) async {
+    final details = await getDetails(invoiceId);
+    if (details.invoice.status != 'draft') {
+      throw StateError('Only draft invoices can be deleted');
+    }
     await SupabaseClientService.client.from('invoices').delete().eq('id', invoiceId);
   }
 
   Future<void> updateStatus(String invoiceId, String status) async {
-    if (!{'draft', 'issued', 'paid', 'cancelled'}.contains(status)) {
-      throw ArgumentError('Invalid invoice status');
+    const allowed = {'draft', 'issued', 'paid', 'cancelled'};
+    if (!allowed.contains(status)) throw ArgumentError('Invalid invoice status');
+
+    final current = (await SupabaseClientService.client
+            .from('invoices')
+            .select('status')
+            .eq('id', invoiceId)
+            .single())['status'] as String;
+
+    final validTransition = switch (current) {
+      'draft' => status == 'issued' || status == 'cancelled',
+      'issued' => status == 'paid' || status == 'cancelled',
+      'paid' => false,
+      'cancelled' => false,
+      _ => false,
+    };
+    if (!validTransition) {
+      throw StateError('Invalid invoice status transition: $current -> $status');
     }
+
     await SupabaseClientService.client
         .from('invoices')
         .update({'status': status})
