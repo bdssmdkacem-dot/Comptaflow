@@ -33,7 +33,7 @@ void main() {
   });
 
   test('InvoiceDetails calculates totals from immutable line values', () {
-    const invoice = InvoiceModel(
+    final invoice = InvoiceModel(
       id: 'i1',
       userId: 'u1',
       invoiceNumber: 'F-001',
@@ -43,7 +43,7 @@ void main() {
       totalTtc: 0,
       status: 'draft',
     );
-    const details = InvoiceDetails(
+    final details = InvoiceDetails(
       invoice: invoice,
       items: [
         InvoiceItemModel(
