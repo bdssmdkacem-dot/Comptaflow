@@ -26,10 +26,18 @@ class _ClientsScreenState extends State<ClientsScreen> {
     final ok = await showDialog<bool>(context: context, builder: (_) => AlertDialog(
       title: const Text('Supprimer le client ?'),
       content: Text('Supprimer « ${client.name} » ?'),
-      actions: [TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Annuler')), FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Supprimer'))],
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Annuler')),
+        FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Supprimer')),
+      ],
     ));
     if (ok != true) return;
-    try { await repo.delete(client.id); if (mounted) reload(); } catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur : $e'))); }
+    try {
+      await repo.delete(client.id);
+      if (mounted) reload();
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur : $e')));
+    }
   }
 
   @override Widget build(BuildContext context) {
@@ -43,7 +51,7 @@ class _ClientsScreenState extends State<ClientsScreen> {
           if (s.hasError) return Center(child: Text('Impossible de charger les clients.\n${s.error}'));
           final list = s.data ?? const <ClientModel>[];
           if (list.isEmpty) return Center(child: Text(search.text.isEmpty ? 'Aucun client.\nAjoutez votre premier client.' : 'Aucun client trouvé.', textAlign: TextAlign.center));
-          return RefreshIndicator(onRefresh: () async { reload(); await future; }, child: ListView.separated(padding: const EdgeInsets.all(16), itemCount: list.length, separatorBuilder: (_, __) => const SizedBox(height: 8), itemBuilder: (_, i) {
+          return RefreshIndicator(onRefresh: () async { reload(); await future; }, child: ListView.separated(padding: const EdgeInsets.all(16), itemCount: list.length, separatorBuilder: (_, _) => const SizedBox(height: 8), itemBuilder: (_, i) {
             final c = list[i];
             final ids = [if (c.ice != null) 'ICE ${c.ice}', if (c.ifNumber != null) 'IF ${c.ifNumber}', if (c.rcNumber != null) 'RC ${c.rcNumber}'].join(' • ');
             final contact = [c.phone, c.email, c.city].whereType<String>().where((x) => x.isNotEmpty).join(' • ');
@@ -67,7 +75,7 @@ class _ClientDialogState extends State<ClientDialog> {
   late final TextEditingController name, ice, ifNumber, rc, tp, phone, email, address, city;
   bool saving = false;
   @override void initState() { super.initState(); final c = widget.client; name=TextEditingController(text:c?.name); ice=TextEditingController(text:c?.ice); ifNumber=TextEditingController(text:c?.ifNumber); rc=TextEditingController(text:c?.rcNumber); tp=TextEditingController(text:c?.tpNumber); phone=TextEditingController(text:c?.phone); email=TextEditingController(text:c?.email); address=TextEditingController(text:c?.address); city=TextEditingController(text:c?.city); }
-  @override void dispose() { for (final c in [name,ice,ifNumber,rc,tp,phone,email,address,city]) c.dispose(); super.dispose(); }
+  @override void dispose() { for (final c in [name,ice,ifNumber,rc,tp,phone,email,address,city]) { c.dispose(); } super.dispose(); }
   String? requiredName(String? v) => v == null || v.trim().isEmpty ? 'Nom requis' : null;
   String? validEmail(String? v) => v == null || v.trim().isEmpty || v.contains('@') ? null : 'Email invalide';
   String? val(TextEditingController c) => c.text.trim().isEmpty ? null : c.text.trim();
