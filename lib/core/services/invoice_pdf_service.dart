@@ -10,13 +10,18 @@ class InvoicePdfService {
   const InvoicePdfService();
 
   Future<Uint8List> build(
-    InvoiceDetails details, {
+    [InvoiceDetails? details], {
     ClientModel? client,
     String? ownerEmail,
+    InvoiceModel? invoice,
   }) async {
-    final invoice = details.invoice;
-    final document = pw.Document(title: 'Facture ${invoice.invoiceNumber}', author: 'ComptaFlow');
-    final date = '${invoice.date.day.toString().padLeft(2, '0')}/${invoice.date.month.toString().padLeft(2, '0')}/${invoice.date.year}';
+    if (details == null && invoice == null) {
+      throw ArgumentError('Invoice details are required');
+    }
+    final resolvedDetails = details ?? InvoiceDetails(invoice: invoice!, items: const []);
+    final resolvedInvoice = invoice ?? resolvedDetails.invoice;
+    final document = pw.Document(title: 'Facture ${resolvedInvoice.invoiceNumber}', author: 'ComptaFlow');
+    final date = '${resolvedInvoice.date.day.toString().padLeft(2, '0')}/${resolvedInvoice.date.month.toString().padLeft(2, '0')}/${resolvedInvoice.date.year}';
 
     document.addPage(
       pw.MultiPage(
@@ -25,7 +30,7 @@ class InvoicePdfService {
         footer: (context) => pw.Container(
           alignment: pw.Alignment.center,
           margin: const pw.EdgeInsets.only(top: 16),
-          child: pw.Text('Généré par ComptaFlow • ${invoice.invoiceNumber}', style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
+          child: pw.Text('Généré par ComptaFlow • ${resolvedInvoice.invoiceNumber}', style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
         ),
         build: (context) => [
           pw.Row(
@@ -35,17 +40,17 @@ class InvoicePdfService {
               pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  pw.Text(invoice.sellerName?.isNotEmpty == true ? invoice.sellerName! : 'COMPTAFLOW', style: pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900)),
-                  if (invoice.sellerAddress?.isNotEmpty == true) pw.Text(invoice.sellerAddress!, style: const pw.TextStyle(fontSize: 9)),
-                  if (invoice.sellerCity?.isNotEmpty == true) pw.Text(invoice.sellerCity!, style: const pw.TextStyle(fontSize: 9)),
-                  if (invoice.sellerPhone?.isNotEmpty == true) pw.Text('Tél. : ${invoice.sellerPhone}', style: const pw.TextStyle(fontSize: 9)),
-                  if (invoice.sellerEmail?.isNotEmpty == true) pw.Text(invoice.sellerEmail!, style: const pw.TextStyle(fontSize: 9)),
-                  if (ownerEmail != null && ownerEmail.isNotEmpty && invoice.sellerEmail == null) pw.Text(ownerEmail, style: const pw.TextStyle(fontSize: 9)),
+                  pw.Text(resolvedInvoice.sellerName?.isNotEmpty == true ? resolvedInvoice.sellerName! : 'COMPTAFLOW', style: pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900)),
+                  if (resolvedInvoice.sellerAddress?.isNotEmpty == true) pw.Text(resolvedInvoice.sellerAddress!, style: const pw.TextStyle(fontSize: 9)),
+                  if (resolvedInvoice.sellerCity?.isNotEmpty == true) pw.Text(resolvedInvoice.sellerCity!, style: const pw.TextStyle(fontSize: 9)),
+                  if (resolvedInvoice.sellerPhone?.isNotEmpty == true) pw.Text('Tél. : ${resolvedInvoice.sellerPhone}', style: const pw.TextStyle(fontSize: 9)),
+                  if (resolvedInvoice.sellerEmail?.isNotEmpty == true) pw.Text(resolvedInvoice.sellerEmail!, style: const pw.TextStyle(fontSize: 9)),
+                  if (ownerEmail != null && ownerEmail.isNotEmpty && resolvedInvoice.sellerEmail == null) pw.Text(ownerEmail, style: const pw.TextStyle(fontSize: 9)),
                   pw.SizedBox(height: 5),
-                  if (invoice.sellerIce?.isNotEmpty == true) pw.Text('ICE : ${invoice.sellerIce}', style: const pw.TextStyle(fontSize: 8)),
-                  if (invoice.sellerIf?.isNotEmpty == true) pw.Text('IF : ${invoice.sellerIf}', style: const pw.TextStyle(fontSize: 8)),
-                  if (invoice.sellerRc?.isNotEmpty == true) pw.Text('RC : ${invoice.sellerRc}', style: const pw.TextStyle(fontSize: 8)),
-                  if (invoice.sellerTp?.isNotEmpty == true) pw.Text('TP : ${invoice.sellerTp}', style: const pw.TextStyle(fontSize: 8)),
+                  if (resolvedInvoice.sellerIce?.isNotEmpty == true) pw.Text('ICE : ${resolvedInvoice.sellerIce}', style: const pw.TextStyle(fontSize: 8)),
+                  if (resolvedInvoice.sellerIf?.isNotEmpty == true) pw.Text('IF : ${resolvedInvoice.sellerIf}', style: const pw.TextStyle(fontSize: 8)),
+                  if (resolvedInvoice.sellerRc?.isNotEmpty == true) pw.Text('RC : ${resolvedInvoice.sellerRc}', style: const pw.TextStyle(fontSize: 8)),
+                  if (resolvedInvoice.sellerTp?.isNotEmpty == true) pw.Text('TP : ${resolvedInvoice.sellerTp}', style: const pw.TextStyle(fontSize: 8)),
                 ],
               ),
               pw.Container(
@@ -56,7 +61,7 @@ class InvoicePdfService {
                   children: [
                     pw.Text('FACTURE', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
                     pw.SizedBox(height: 4),
-                    pw.Text(invoice.invoiceNumber, style: pw.TextStyle(fontSize: 15, fontWeight: pw.FontWeight.bold)),
+                    pw.Text(resolvedInvoice.invoiceNumber, style: pw.TextStyle(fontSize: 15, fontWeight: pw.FontWeight.bold)),
                     pw.SizedBox(height: 3),
                     pw.Text(date, style: const pw.TextStyle(fontSize: 9)),
                   ],
@@ -86,7 +91,7 @@ class InvoicePdfService {
             columnWidths: const {0: pw.FlexColumnWidth(4.2), 1: pw.FlexColumnWidth(1.1), 2: pw.FlexColumnWidth(1.7), 3: pw.FlexColumnWidth(1.2), 4: pw.FlexColumnWidth(1.8)},
             children: [
               _row(['Désignation', 'Qté', 'Prix HT', 'TVA', 'Total TTC'], header: true),
-              ...details.items.map((item) => _row([item.description, _number(item.quantity), '${_number(item.unitPrice)} DH', '${_number(item.taxRate)} %', '${_number(item.totalTtc)} DH'])),
+              ...resolvedDetails.items.map((item) => _row([item.description, _number(item.quantity), '${_number(item.unitPrice)} DH', '${_number(item.taxRate)} %', '${_number(item.totalTtc)} DH'])),
             ],
           ),
           pw.SizedBox(height: 18),
@@ -96,17 +101,17 @@ class InvoicePdfService {
               width: 230,
               padding: const pw.EdgeInsets.all(12),
               decoration: pw.BoxDecoration(border: pw.Border.all(color: PdfColors.grey300), borderRadius: pw.BorderRadius.circular(6)),
-              child: pw.Column(children: [_totalRow('Total HT', details.calculatedHt), _totalRow('TVA', details.calculatedTva), pw.Divider(color: PdfColors.grey300), _totalRow('Total TTC', details.calculatedTtc, bold: true)]),
+              child: pw.Column(children: [_totalRow('Total HT', resolvedDetails.calculatedHt), _totalRow('TVA', resolvedDetails.calculatedTva), pw.Divider(color: PdfColors.grey300), _totalRow('Total TTC', resolvedDetails.calculatedTtc, bold: true)]),
             ),
           ),
-          if (invoice.paymentTerms?.isNotEmpty == true) ...[
+          if (resolvedInvoice.paymentTerms?.isNotEmpty == true) ...[
             pw.SizedBox(height: 20),
             pw.Text('Conditions de paiement', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
             pw.SizedBox(height: 4),
-            pw.Text(invoice.paymentTerms!, style: const pw.TextStyle(fontSize: 9)),
+            pw.Text(resolvedInvoice.paymentTerms!, style: const pw.TextStyle(fontSize: 9)),
           ],
           pw.SizedBox(height: 24),
-          pw.Text('Statut : ${_statusLabel(invoice.status)}', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+          pw.Text('Statut : ${_statusLabel(resolvedInvoice.status)}', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
           pw.SizedBox(height: 6),
           pw.Text('Merci pour votre confiance.', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700)),
         ],
