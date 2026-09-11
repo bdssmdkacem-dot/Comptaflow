@@ -5,6 +5,7 @@ import 'package:pdf/widgets.dart' as pw;
 
 import '../../data/models/client.dart';
 import '../../data/models/invoice.dart';
+import '../../data/repositories/client_repo.dart';
 
 class InvoicePdfService {
   const InvoicePdfService();
@@ -15,6 +16,8 @@ class InvoicePdfService {
     ClientModel? client,
     String? ownerEmail,
   }) async {
+    client ??= await _resolveClient(invoice);
+
     final document = pw.Document(
       title: 'Facture ${invoice.invoiceNumber}',
       author: 'ComptaFlow',
@@ -142,6 +145,20 @@ class InvoicePdfService {
     );
 
     return document.save();
+  }
+
+  Future<ClientModel?> _resolveClient(InvoiceModel invoice) async {
+    final clientId = invoice.clientId;
+    if (clientId == null || clientId.isEmpty) return null;
+    try {
+      final clients = await ClientRepository().list();
+      for (final client in clients) {
+        if (client.id == clientId) return client;
+      }
+    } catch (_) {
+      // PDF generation remains available as a cash-client invoice if lookup fails.
+    }
+    return null;
   }
 
   pw.TableRow _row(List<String> values, {bool header = false}) => pw.TableRow(
