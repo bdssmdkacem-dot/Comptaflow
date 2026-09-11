@@ -10,10 +10,15 @@ class ProductRepository {
     var query = SupabaseClientService.client.from('products').select().eq('user_id', userId);
     if (activeOnly) query = query.eq('active', true);
     final rows = await query.order('name');
-    final products = (rows as List).map((row) => ProductModel.fromMap(Map<String, dynamic>.from(row as Map))).toList();
+    final products = (rows as List)
+        .map((row) => ProductModel.fromMap(Map<String, dynamic>.from(row as Map)))
+        .toList();
     final term = search?.trim().toLowerCase();
     if (term == null || term.isEmpty) return products;
-    return products.where((p) => p.name.toLowerCase().contains(term) || (p.reference?.toLowerCase().contains(term) ?? false)).toList(growable: false);
+    return products
+        .where((p) => p.name.toLowerCase().contains(term) ||
+            p.reference?.toLowerCase().contains(term) == true)
+        .toList(growable: false);
   }
 
   Future<ProductModel> create({required String name, required double unitPrice, String? description, String? reference, String type = 'product', String unit = 'unit', double purchasePrice = 0, double taxRate = 0, bool stockManaged = false, double stockQuantity = 0, double minStock = 0}) async {
