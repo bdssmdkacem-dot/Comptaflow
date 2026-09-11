@@ -27,6 +27,7 @@ class DocumentStorageService {
             upsert: true,
           ),
         );
+    await _client.from('invoices').update({'pdf_url': path}).eq('id', invoiceId).eq('user_id', user.id);
     return path;
   }
 
