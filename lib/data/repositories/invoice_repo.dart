@@ -20,27 +20,11 @@ class InvoiceRepository {
     return (rows as List).map((row) => InvoiceModel.fromMap(Map<String, dynamic>.from(row))).toList();
   }
 
-  Future<List<InvoiceModel>> listByClient(String clientId) async {
-    final rows = await SupabaseClientService.client.from('invoices').select().eq('client_id', clientId).order('date', ascending: false).order('created_at', ascending: false);
-    return (rows as List).map((row) => InvoiceModel.fromMap(Map<String, dynamic>.from(row))).toList();
-  }
-
   Future<InvoiceDetails> getDetails(String invoiceId) async {
     final client = SupabaseClientService.client;
     final invoiceRow = await client.from('invoices').select().eq('id', invoiceId).single();
     final itemRows = await client.from('invoice_items').select().eq('invoice_id', invoiceId).order('created_at');
     return InvoiceDetails(invoice: InvoiceModel.fromMap(Map<String, dynamic>.from(invoiceRow)), items: (itemRows as List).map((row) => InvoiceItemModel.fromMap(Map<String, dynamic>.from(row))).toList());
-  }
-
-  Future<Map<String, double>> clientStats(String clientId) async {
-    final row = await SupabaseClientService.client.rpc('get_client_invoice_stats', params: {'p_client_id': clientId});
-    final data = (row as List).first as Map;
-    return {
-      'invoiceCount': (data['invoice_count'] as num).toDouble(),
-      'ca': (data['total_ca'] as num).toDouble(),
-      'encaisse': (data['total_encaisse'] as num).toDouble(),
-      'restant': (data['total_restant'] as num).toDouble(),
-    };
   }
 
   Future<String> nextInvoiceNumber() async => await SupabaseClientService.client.rpc('next_invoice_number') as String;
@@ -74,7 +58,8 @@ class InvoiceRepository {
     if (details.invoice.status != 'draft') throw StateError('Only draft invoices can be edited');
     final totalHt = items.fold<double>(0, (sum, item) => sum + item.totalHt);
     final totalTva = items.fold<double>(0, (sum, item) => sum + item.totalTva);
-    await client.from('invoices').update({'invoice_number': invoiceNumber.trim(), 'client_id': clientId, 'date': date.toIso8601String().split('T').first, 'total_ht': totalHt, 'total_tva': totalTva, 'total_ttc': totalHt + totalTva}).eq('id', invoiceId);
+    final totalTtc = totalHt + totalTva;
+    await client.from('invoices').update({'invoice_number': invoiceNumber.trim(), 'client_id': clientId, 'date': date.toIso8601String().split('T').first, 'total_ht': totalHt, 'total_tva': totalTva, 'total_ttc': totalTtc}).eq('id', invoiceId);
     await client.from('invoice_items').delete().eq('invoice_id', invoiceId);
     await client.from('invoice_items').insert(items.map((item) => {'invoice_id': invoiceId, 'description': item.description.trim(), 'quantity': item.quantity, 'unit_price': item.unitPrice, 'tax_rate': item.taxRate}).toList());
   }
