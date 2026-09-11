@@ -61,13 +61,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 }
 
 class _DashboardData {
-  const _DashboardData({
-    required this.invoices,
-    required this.expenses,
-    required this.clientCount,
-    required this.productCount,
-  });
-
+  const _DashboardData({required this.invoices, required this.expenses, required this.clientCount, required this.productCount});
   final List<InvoiceModel> invoices;
   final List<ExpenseModel> expenses;
   final int clientCount;
@@ -76,10 +70,7 @@ class _DashboardData {
   _DashboardPeriodData forPeriod(_DashboardPeriod period, DateTime now) {
     final currentRange = _range(period, now);
     final previousRange = _range(period, _previousAnchor(period, now));
-    return _DashboardPeriodData(
-      current: _metrics(currentRange),
-      previous: _metrics(previousRange),
-    );
+    return _DashboardPeriodData(current: _metrics(currentRange), previous: _metrics(previousRange));
   }
 
   _Metrics _metrics(_DateRange range) {
@@ -114,11 +105,14 @@ class _DashboardData {
   static DateTime _previousAnchor(_DashboardPeriod period, DateTime now) {
     switch (period) {
       case _DashboardPeriod.month:
-        return DateTime(now.year, now.month - 1, now.day.clamp(1, DateTime(now.year, now.month, 0).day));
+        final previousMonthLastDay = DateTime(now.year, now.month, 0).day;
+        return DateTime(now.year, now.month - 1, now.day.clamp(1, previousMonthLastDay) as int);
       case _DashboardPeriod.quarter:
-        return DateTime(now.year, now.month - 3, now.day.clamp(1, DateTime(now.year, now.month - 2, 0).day));
+        final previousQuarterLastDay = DateTime(now.year, now.month - 2, 0).day;
+        return DateTime(now.year, now.month - 3, now.day.clamp(1, previousQuarterLastDay) as int);
       case _DashboardPeriod.year:
-        return DateTime(now.year - 1, now.month, now.day.clamp(1, DateTime(now.year - 1, now.month + 1, 0).day));
+        final previousYearLastDay = DateTime(now.year - 1, now.month + 1, 0).day;
+        return DateTime(now.year - 1, now.month, now.day.clamp(1, previousYearLastDay) as int);
     }
   }
 
@@ -148,22 +142,13 @@ class _DashboardPeriodData {
 }
 
 class _Metrics {
-  const _Metrics({
-    required this.invoiced,
-    required this.collected,
-    required this.receivable,
-    required this.expenses,
-    required this.vatCollected,
-    required this.vatOnExpenses,
-  });
-
+  const _Metrics({required this.invoiced, required this.collected, required this.receivable, required this.expenses, required this.vatCollected, required this.vatOnExpenses});
   final double invoiced;
   final double collected;
   final double receivable;
   final double expenses;
   final double vatCollected;
   final double vatOnExpenses;
-
   double get netVat => vatCollected - vatOnExpenses;
   double get operatingBalance => collected - expenses;
 }
@@ -178,7 +163,6 @@ class _MonthPoint {
 class _Home extends StatefulWidget {
   const _Home({required this.l10n});
   final AppLocalizations l10n;
-
   @override
   State<_Home> createState() => _HomeState();
 }
@@ -241,31 +225,11 @@ class _HomeState extends State<_Home> {
     return FutureBuilder<_DashboardData>(
       future: _future,
       builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.cloud_off_outlined, size: 48),
-                  const SizedBox(height: 12),
-                  Text('Impossible de charger le tableau de bord.\n${snapshot.error}', textAlign: TextAlign.center),
-                  const SizedBox(height: 16),
-                  FilledButton.icon(onPressed: _refresh, icon: const Icon(Icons.refresh), label: const Text('Réessayer')),
-                ],
-              ),
-            ),
-          );
-        }
-
+        if (snapshot.connectionState != ConnectionState.done) return const Center(child: CircularProgressIndicator());
+        if (snapshot.hasError) return Center(child: Padding(padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.cloud_off_outlined, size: 48), const SizedBox(height: 12), Text('Impossible de charger le tableau de bord.\n${snapshot.error}', textAlign: TextAlign.center), const SizedBox(height: 16), FilledButton.icon(onPressed: _refresh, icon: const Icon(Icons.refresh), label: const Text('Réessayer'))])));
         final data = snapshot.data!;
         final periodData = data.forPeriod(_period, DateTime.now());
         final points = data.monthlyPoints(DateTime.now());
-
         return RefreshIndicator(
           onRefresh: _refresh,
           child: ListView(
@@ -305,43 +269,11 @@ class _HomeState extends State<_Home> {
               const SizedBox(height: 16),
               _MonthlyChart(points: points),
               const SizedBox(height: 16),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text('Synthèse TVA', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 10),
-                      _SummaryRow(label: 'TVA collectée', value: periodData.current.vatCollected),
-                      _SummaryRow(label: 'TVA sur dépenses', value: periodData.current.vatOnExpenses),
-                      const Divider(),
-                      _SummaryRow(label: 'TVA nette estimée', value: periodData.current.netVat, bold: true),
-                      const SizedBox(height: 6),
-                      Text('Indicateur de gestion, pas un calcul fiscal officiel.', style: Theme.of(context).textTheme.bodySmall),
-                    ],
-                  ),
-                ),
-              ),
+              Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [Text('Synthèse TVA', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)), const SizedBox(height: 10), _SummaryRow(label: 'TVA collectée', value: periodData.current.vatCollected), _SummaryRow(label: 'TVA sur dépenses', value: periodData.current.vatOnExpenses), const Divider(), _SummaryRow(label: 'TVA nette estimée', value: periodData.current.netVat, bold: true), const SizedBox(height: 6), Text('Indicateur de gestion, pas un calcul fiscal officiel.', style: Theme.of(context).textTheme.bodySmall)]))),
               const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(child: _CountCard(icon: Icons.receipt_long, label: 'Factures', value: data.invoices.length)),
-                  const SizedBox(width: 10),
-                  Expanded(child: _CountCard(icon: Icons.people_outline, label: 'Clients', value: data.clientCount)),
-                  const SizedBox(width: 10),
-                  Expanded(child: _CountCard(icon: Icons.inventory_2_outlined, label: 'Produits', value: data.productCount)),
-                ],
-              ),
+              Row(children: [Expanded(child: _CountCard(icon: Icons.receipt_long, label: 'Factures', value: data.invoices.length)), const SizedBox(width: 10), Expanded(child: _CountCard(icon: Icons.people_outline, label: 'Clients', value: data.clientCount)), const SizedBox(width: 10), Expanded(child: _CountCard(icon: Icons.inventory_2_outlined, label: 'Produits', value: data.productCount))]),
               const SizedBox(height: 16),
-              Card(
-                child: ListTile(
-                  leading: const Icon(Icons.insights_outlined),
-                  title: const Text('Solde opérationnel'),
-                  subtitle: const Text('Encaissé − dépenses'),
-                  trailing: Text('${periodData.current.operatingBalance.toStringAsFixed(2)} DH', style: const TextStyle(fontWeight: FontWeight.bold)),
-                ),
-              ),
+              Card(child: ListTile(leading: const Icon(Icons.insights_outlined), title: const Text('Solde opérationnel'), subtitle: const Text('Encaissé − dépenses'), trailing: Text('${periodData.current.operatingBalance.toStringAsFixed(2)} DH', style: const TextStyle(fontWeight: FontWeight.bold)))),
             ],
           ),
         );
@@ -356,89 +288,27 @@ class _ComparisonCard extends StatelessWidget {
   final _Metrics previous;
   final String label;
 
-  double _change(double current, double previous) {
-    if (previous == 0) return current == 0 ? 0 : 100;
-    return ((current - previous) / previous) * 100;
-  }
+  double _change(double current, double previous) => previous == 0 ? (current == 0 ? 0 : 100) : ((current - previous) / previous) * 100;
 
   @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text('Évolution $label', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 10),
-            _ChangeRow(label: 'CA facturé', change: _change(current.invoiced, previous.invoiced)),
-            _ChangeRow(label: 'Encaissé', change: _change(current.collected, previous.collected)),
-            _ChangeRow(label: 'Dépenses', change: _change(current.expenses, previous.expenses)),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [Text('Évolution $label', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)), const SizedBox(height: 10), _ChangeRow(label: 'CA facturé', change: _change(current.invoiced, previous.invoiced)), _ChangeRow(label: 'Encaissé', change: _change(current.collected, previous.collected)), _ChangeRow(label: 'Dépenses', change: _change(current.expenses, previous.expenses))])));
 }
 
 class _ChangeRow extends StatelessWidget {
   const _ChangeRow({required this.label, required this.change});
   final String label;
   final double change;
-
   @override
-  Widget build(BuildContext context) {
-    final positive = change >= 0;
-    final icon = positive ? Icons.arrow_upward : Icons.arrow_downward;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          Icon(icon, size: 16),
-          const SizedBox(width: 6),
-          Expanded(child: Text(label)),
-          Text('${change.abs().toStringAsFixed(1)}%', style: const TextStyle(fontWeight: FontWeight.bold)),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: Row(children: [Icon(change >= 0 ? Icons.arrow_upward : Icons.arrow_downward, size: 16), const SizedBox(width: 6), Expanded(child: Text(label)), Text('${change.abs().toStringAsFixed(1)}%', style: const TextStyle(fontWeight: FontWeight.bold))]));
 }
 
 class _MonthlyChart extends StatelessWidget {
   const _MonthlyChart({required this.points});
   final List<_MonthPoint> points;
-
   @override
   Widget build(BuildContext context) {
-    final maxValue = points.fold<double>(0, (max, point) => [max, point.invoiced, point.expenses].reduce((a, b) => a > b ? a : b));
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text('6 derniers mois', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 14),
-            if (maxValue == 0)
-              const Padding(padding: EdgeInsets.all(16), child: Center(child: Text('Aucune donnée sur les 6 derniers mois.')))
-            else
-              ...points.map((point) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 5),
-                    child: Row(
-                      children: [
-                        SizedBox(width: 44, child: Text(point.label, style: Theme.of(context).textTheme.bodySmall)),
-                        Expanded(child: _Bar(value: point.invoiced, maxValue: maxValue, label: 'CA')),
-                        const SizedBox(width: 8),
-                        SizedBox(width: 84, child: Text('${point.invoiced.toStringAsFixed(0)} DH', textAlign: TextAlign.end, style: Theme.of(context).textTheme.bodySmall)),
-                      ],
-                    ),
-                  )),
-            const SizedBox(height: 8),
-            Text('Le graphique suit le CA facturé. Les dépenses restent visibles dans les indicateurs.', style: Theme.of(context).textTheme.bodySmall),
-          ],
-        ),
-      ),
-    );
+    final maxValue = points.fold<double>(0, (max, point) => max > point.invoiced ? max : point.invoiced);
+    return Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [Text('6 derniers mois', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)), const SizedBox(height: 14), if (maxValue == 0) const Padding(padding: EdgeInsets.all(16), child: Center(child: Text('Aucune donnée sur les 6 derniers mois.'))) else ...points.map((point) => Padding(padding: const EdgeInsets.symmetric(vertical: 5), child: Row(children: [SizedBox(width: 44, child: Text(point.label, style: Theme.of(context).textTheme.bodySmall)), Expanded(child: _Bar(value: point.invoiced, maxValue: maxValue, label: 'CA')), const SizedBox(width: 8), SizedBox(width: 84, child: Text('${point.invoiced.toStringAsFixed(0)} DH', textAlign: TextAlign.end, style: Theme.of(context).textTheme.bodySmall))])), const SizedBox(height: 8), Text('CA facturé par mois. Les dépenses restent visibles dans les indicateurs.', style: Theme.of(context).textTheme.bodySmall)])));
   }
 }
 
@@ -447,26 +317,10 @@ class _Bar extends StatelessWidget {
   final double value;
   final double maxValue;
   final String label;
-
   @override
   Widget build(BuildContext context) {
-    final factor = maxValue == 0 ? 0.0 : (value / maxValue).clamp(0.0, 1.0);
-    return Tooltip(
-      message: '$label: ${value.toStringAsFixed(2)} DH',
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: FractionallySizedBox(
-          widthFactor: factor,
-          child: Container(
-            height: 18,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(6),
-              color: Theme.of(context).colorScheme.primaryContainer,
-            ),
-          ),
-        ),
-      ),
-    );
+    final factor = maxValue == 0 ? 0.0 : (value / maxValue).clamp(0.0, 1.0).toDouble();
+    return Tooltip(message: '$label: ${value.toStringAsFixed(2)} DH', child: Align(alignment: Alignment.centerLeft, child: FractionallySizedBox(widthFactor: factor, child: Container(height: 18, decoration: BoxDecoration(borderRadius: BorderRadius.circular(6), color: Theme.of(context).colorScheme.primaryContainer)))));
   }
 }
 
@@ -475,24 +329,8 @@ class _MetricCard extends StatelessWidget {
   final IconData icon;
   final String label;
   final double value;
-
   @override
-  Widget build(BuildContext context) => Card(
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 22),
-              const SizedBox(height: 6),
-              Text(label, style: Theme.of(context).textTheme.bodySmall),
-              const SizedBox(height: 3),
-              Text('${value.toStringAsFixed(2)} DH', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-            ],
-          ),
-        ),
-      );
+  Widget build(BuildContext context) => Card(child: Padding(padding: const EdgeInsets.all(12), child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [Icon(icon, size: 22), const SizedBox(height: 6), Text(label, style: Theme.of(context).textTheme.bodySmall), const SizedBox(height: 3), Text('${value.toStringAsFixed(2)} DH', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold))])));
 }
 
 class _CountCard extends StatelessWidget {
@@ -500,16 +338,8 @@ class _CountCard extends StatelessWidget {
   final IconData icon;
   final String label;
   final int value;
-
   @override
-  Widget build(BuildContext context) => Card(
-        child: ListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-          leading: Icon(icon),
-          title: Text('$value'),
-          subtitle: Text(label),
-        ),
-      );
+  Widget build(BuildContext context) => Card(child: ListTile(contentPadding: const EdgeInsets.symmetric(horizontal: 12), leading: Icon(icon), title: Text('$value'), subtitle: Text(label)));
 }
 
 class _SummaryRow extends StatelessWidget {
@@ -517,16 +347,6 @@ class _SummaryRow extends StatelessWidget {
   final String label;
   final double value;
   final bool bold;
-
   @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 3),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(label, style: TextStyle(fontWeight: bold ? FontWeight.bold : FontWeight.normal)),
-            Text('${value.toStringAsFixed(2)} DH', style: TextStyle(fontWeight: bold ? FontWeight.bold : FontWeight.normal)),
-          ],
-        ),
-      );
+  Widget build(BuildContext context) => Padding(padding: const EdgeInsets.symmetric(vertical: 3), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label, style: TextStyle(fontWeight: bold ? FontWeight.bold : FontWeight.normal)), Text('${value.toStringAsFixed(2)} DH', style: TextStyle(fontWeight: bold ? FontWeight.bold : FontWeight.normal))]));
 }
