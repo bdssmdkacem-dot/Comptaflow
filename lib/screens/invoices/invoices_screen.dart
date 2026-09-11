@@ -21,7 +21,7 @@ class InvoicesScreen extends StatefulWidget {
 }
 
 class _InvoiceDraftLine {
-  _InvoiceDraftLine({this.product});
+  _InvoiceDraftLine();
 
   ProductModel? product;
   final description = TextEditingController();
@@ -81,27 +81,134 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
       final products = await ProductRepository().list();
       if (!mounted) return;
       final result = await _invoiceDialog(
-        clients: clients,
-        products: products,
         invoice: invoice,
         details: details,
+        clients: clients,
+        products: products,
       );
-      if (result == true && mounted) setState(() => _future = _repository.list());
+      if (result != null && mounted) setState(() => _future = _repository.list());
     } catch (error) {
-      if (mounted) _showError('Impossible de modifier la facture : $error');
+      if (mounted) _showError('Erreur : $error');
+    }
+  }
+
+  Future<void> _refresh() async {
+    setState(() => _future = _repository.list());
+  }
+
+  Future<void> _showInvoice(InvoiceModel invoice) async {
+    try {
+      final details = await _repository.getDetails(invoice.id);
+      if (!mounted) return;
+      await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        builder: (context) => _InvoiceDetailsSheet(
+          invoice: invoice,
+          details: details,
+          onEdit: invoice.status == 'draft' ? () => _editDraft(invoice) : null,
+          onDelete: invoice.status == 'draft' ? () => _deleteDraft(invoice) : null,
+          onIssue: invoice.status == 'draft' ? () => _issueDraft(invoice) : null,
+          onPreview: () => _previewPdf(invoice, details),
+          onShare: () => _sharePdf(invoice, details),
+          onPrint: () => _printPdf(invoice, details),
+        ),
+      );
+    } catch (error) {
+      if (mounted) _showError('Erreur : $error');
+    }
+  }
+
+  Future<void> _issueDraft(InvoiceModel invoice) async {
+    try {
+      await _repository.issue(invoice.id);
+      if (mounted) {
+        Navigator.of(context).pop();
+        setState(() => _future = _repository.list());
+      }
+    } catch (error) {
+      if (mounted) _showError('Impossible d’émettre la facture : $error');
+    }
+  }
+
+  Future<void> _deleteDraft(InvoiceModel invoice) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Supprimer la facture ?'),
+        content: Text('La facture ${invoice.invoiceNumber} sera supprimée définitivement.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Annuler')),
+          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Supprimer')),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await _repository.delete(invoice.id);
+      if (mounted) {
+        Navigator.of(context).pop();
+        setState(() => _future = _repository.list());
+      }
+    } catch (error) {
+      if (mounted) _showError('Impossible de supprimer la facture : $error');
+    }
+  }
+
+  Future<void> _previewPdf(InvoiceModel invoice, InvoiceDetails details) async {
+    try {
+      final bytes = await _pdfService.build(invoice: invoice, details: details);
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (context) => Dialog(
+          child: SizedBox(
+            width: 900,
+            height: 700,
+            child: PdfPreview(
+              build: (format) async => bytes,
+              allowPrinting: false,
+              allowSharing: false,
+              canChangePageFormat: false,
+              canChangeOrientation: false,
+            ),
+          ),
+        ),
+      );
+    } catch (error) {
+      if (mounted) _showError('Erreur PDF : $error');
+    }
+  }
+
+  Future<void> _sharePdf(InvoiceModel invoice, InvoiceDetails details) async {
+    try {
+      final bytes = await _pdfService.build(invoice: invoice, details: details);
+      await Printing.sharePdf(bytes: bytes, filename: '${invoice.invoiceNumber}.pdf');
+    } catch (error) {
+      if (mounted) _showError('Erreur PDF : $error');
+    }
+  }
+
+  Future<void> _printPdf(InvoiceModel invoice, InvoiceDetails details) async {
+    try {
+      final bytes = await _pdfService.build(invoice: invoice, details: details);
+      await Printing.layoutPdf(onLayout: (_) async => bytes);
+    } catch (error) {
+      if (mounted) _showError('Erreur impression : $error');
     }
   }
 
   Future<bool?> _invoiceDialog({
-    required List<ClientModel> clients,
-    required List<ProductModel> products,
     InvoiceModel? invoice,
     InvoiceDetails? details,
+    required List<ClientModel> clients,
+    required List<ProductModel> products,
   }) async {
     final editing = invoice != null;
-    final number = TextEditingController(text: invoice?.invoiceNumber ?? '');
-    String? clientId = invoice?.clientId;
+    final number = TextEditingController(text: editing ? invoice.invoiceNumber : '');
+    final selectedClientId = ValueNotifier<String?>(editing ? invoice.clientId : null);
     final lines = <_InvoiceDraftLine>[];
+
     if (details != null) {
       for (final item in details.items) {
         final line = _InvoiceDraftLine();
@@ -111,134 +218,145 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
         line.tax.text = item.taxRate.toStringAsFixed(2);
         lines.add(line);
       }
-    } else {
-      lines.add(_InvoiceDraftLine());
     }
-    final formKey = GlobalKey<FormState>();
+    if (lines.isEmpty) lines.add(_InvoiceDraftLine());
 
     try {
       return await showDialog<bool>(
         context: context,
-        builder: (dialogContext) => StatefulBuilder(
+        builder: (context) => StatefulBuilder(
           builder: (context, setDialogState) {
-            final ht = lines.fold<double>(0, (sum, line) => sum + line.ht);
-            final tva = lines.fold<double>(0, (sum, line) => sum + line.tva);
+            double totalHt() => lines.fold(0, (sum, line) => sum + line.ht);
+            double totalTva() => lines.fold(0, (sum, line) => sum + line.tva);
+
             return AlertDialog(
               title: Text(editing ? 'Modifier la facture' : 'Nouvelle facture'),
               content: SizedBox(
-                width: 620,
-                child: Form(
-                  key: formKey,
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        TextFormField(
-                          controller: number,
-                          readOnly: editing,
-                          decoration: const InputDecoration(labelText: 'N° facture'),
-                          validator: (v) => v == null || v.trim().isEmpty ? 'Numéro requis' : null,
+                width: 900,
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      TextField(
+                        controller: number,
+                        readOnly: editing,
+                        decoration: InputDecoration(
+                          labelText: 'N° facture',
+                          hintText: editing ? null : 'Laisser vide pour numérotation automatique',
                         ),
-                        const SizedBox(height: 8),
-                        DropdownButtonFormField<String>(
-                          initialValue: clientId ?? '__cash__',
+                      ),
+                      const SizedBox(height: 12),
+                      ValueListenableBuilder<String?>(
+                        valueListenable: selectedClientId,
+                        builder: (context, value, _) => DropdownButtonFormField<String>(
+                          value: value,
                           decoration: const InputDecoration(labelText: 'Client'),
-                          items: [
-                            const DropdownMenuItem(value: '__cash__', child: Text('Client comptant')),
-                            ...clients.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name))),
-                          ],
-                          onChanged: (v) => setDialogState(() => clientId = v == '__cash__' ? null : v),
+                          items: clients
+                              .map((client) => DropdownMenuItem(value: client.id, child: Text(client.name)))
+                              .toList(),
+                          onChanged: (value) => selectedClientId.value = value,
                         ),
-                        const SizedBox(height: 12),
-                        ...List.generate(lines.length, (index) {
-                          final line = lines[index];
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: Card(
-                              margin: EdgeInsets.zero,
-                              child: Padding(
-                                padding: const EdgeInsets.all(12),
-                                child: Column(
+                      ),
+                      const SizedBox(height: 20),
+                      ...lines.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final line = entry.value;
+                        return Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Column(
+                              children: [
+                                Row(
                                   children: [
-                                    Row(
-                                      children: [
-                                        Expanded(child: Text('Ligne ${index + 1}', style: const TextStyle(fontWeight: FontWeight.bold))),
-                                        if (lines.length > 1)
-                                          IconButton(
-                                            onPressed: () => setDialogState(() {
-                                              final removed = lines.removeAt(index);
-                                              removed.dispose();
-                                            }),
-                                            icon: const Icon(Icons.delete_outline),
-                                          ),
-                                      ],
-                                    ),
-                                    if (products.isNotEmpty)
-                                      DropdownButtonFormField<ProductModel>(
-                                        initialValue: line.product,
-                                        decoration: const InputDecoration(labelText: 'Produit / service'),
-                                        items: products.map((p) => DropdownMenuItem(value: p, child: Text('${p.name} — ${p.unitPrice.toStringAsFixed(2)} DH'))).toList(),
-                                        onChanged: (p) {
-                                          if (p != null) setDialogState(() => line.useProduct(p));
+                                    Expanded(child: Text('Ligne ${index + 1}', style: const TextStyle(fontWeight: FontWeight.bold))),
+                                    if (lines.length > 1)
+                                      IconButton(
+                                        onPressed: () {
+                                          line.dispose();
+                                          setDialogState(() => lines.removeAt(index));
                                         },
+                                        icon: const Icon(Icons.delete_outline),
                                       ),
-                                    TextFormField(
-                                      controller: line.description,
-                                      decoration: const InputDecoration(labelText: 'Description'),
-                                      validator: (v) => v == null || v.trim().isEmpty ? 'Description requise' : null,
-                                    ),
-                                    Row(
-                                      children: [
-                                        Expanded(child: TextFormField(controller: line.quantity, keyboardType: const TextInputType.numberWithOptions(decimal: true), onChanged: (_) => setDialogState(() {}), decoration: const InputDecoration(labelText: 'Qté'))),
-                                        const SizedBox(width: 8),
-                                        Expanded(child: TextFormField(controller: line.price, keyboardType: const TextInputType.numberWithOptions(decimal: true), onChanged: (_) => setDialogState(() {}), decoration: const InputDecoration(labelText: 'Prix HT'))),
-                                        const SizedBox(width: 8),
-                                        Expanded(child: TextFormField(controller: line.tax, keyboardType: const TextInputType.numberWithOptions(decimal: true), onChanged: (_) => setDialogState(() {}), decoration: const InputDecoration(labelText: 'TVA %'))),
-                                      ],
-                                    ),
-                                    Align(alignment: Alignment.centerRight, child: Text('Ligne TTC : ${(line.ht + line.tva).toStringAsFixed(2)} DH')),
                                   ],
                                 ),
-                              ),
+                                DropdownButtonFormField<ProductModel>(
+                                  value: line.product,
+                                  decoration: const InputDecoration(labelText: 'Produit / service'),
+                                  items: products
+                                      .map((product) => DropdownMenuItem(value: product, child: Text(product.name)))
+                                      .toList(),
+                                  onChanged: (product) {
+                                    if (product == null) return;
+                                    setDialogState(() => line.useProduct(product));
+                                  },
+                                ),
+                                TextField(controller: line.description, decoration: const InputDecoration(labelText: 'Description')),
+                                Row(
+                                  children: [
+                                    Expanded(child: TextField(controller: line.quantity, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Qté'))),
+                                    const SizedBox(width: 8),
+                                    Expanded(child: TextField(controller: line.price, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Prix HT'))),
+                                    const SizedBox(width: 8),
+                                    Expanded(child: TextField(controller: line.tax, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'TVA %'))),
+                                  ],
+                                ),
+                              ],
                             ),
-                          );
-                        }),
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: TextButton.icon(
-                            icon: const Icon(Icons.add),
-                            label: const Text('Ajouter une ligne'),
-                            onPressed: () => setDialogState(() => lines.add(_InvoiceDraftLine())),
                           ),
-                        ),
-                        const Divider(),
-                        _TotalRow(label: 'Total HT', value: ht),
-                        _TotalRow(label: 'TVA', value: tva),
-                        _TotalRow(label: 'Total TTC', value: ht + tva, bold: true),
-                      ],
-                    ),
+                        );
+                      }),
+                      TextButton.icon(
+                        onPressed: () => setDialogState(() => lines.add(_InvoiceDraftLine())),
+                        icon: const Icon(Icons.add),
+                        label: const Text('Ajouter une ligne'),
+                      ),
+                      const Divider(),
+                      Text('Total HT : ${totalHt().toStringAsFixed(2)} MAD'),
+                      Text('TVA : ${totalTva().toStringAsFixed(2)} MAD'),
+                      Text('Total TTC : ${(totalHt() + totalTva()).toStringAsFixed(2)} MAD', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    ],
                   ),
                 ),
               ),
               actions: [
-                TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Annuler')),
+                TextButton(onPressed: () => Navigator.pop(context), child: const Text('Annuler')),
                 FilledButton(
                   onPressed: () async {
-                    if (!formKey.currentState!.validate()) return;
-                    if (lines.any((line) => line.q <= 0 || line.p < 0 || line.t < 0 || line.t > 100)) {
-                      ScaffoldMessenger.of(dialogContext).showSnackBar(const SnackBar(content: Text('Vérifiez les quantités, prix et TVA.')));
-                      return;
-                    }
                     try {
-                      final inputs = lines.map((line) => InvoiceLineInput(description: line.description.text, quantity: line.q, unitPrice: line.p, taxRate: line.t)).toList();
-                      if (editing) {
-                        await _repository.updateDraft(invoice.id, invoiceNumber: number.text, clientId: clientId, date: invoice.date, items: inputs);
-                      } else {
-                        await _repository.create(invoiceNumber: number.text.trim().isEmpty ? null : number.text, clientId: clientId, date: DateTime.now(), items: inputs);
+                      if (selectedClientId.value == null) throw Exception('Sélectionnez un client.');
+                      final inputs = lines
+                          .map((line) => InvoiceItemInput(
+                                description: line.description.text.trim(),
+                                quantity: line.q,
+                                unitPrice: line.p,
+                                taxRate: line.t,
+                              ))
+                          .toList();
+                      if (inputs.any((item) => item.description.isEmpty || item.quantity <= 0 || item.unitPrice < 0 || item.taxRate < 0 || item.taxRate > 100)) {
+                        throw Exception('Vérifiez les lignes de facture.');
                       }
-                      if (dialogContext.mounted) Navigator.pop(dialogContext, true);
+
+                      if (editing) {
+                        await _repository.updateDraft(
+                          invoice!.id,
+                          invoiceNumber: number.text.trim(),
+                          clientId: selectedClientId.value!,
+                          date: invoice.date,
+                          items: inputs,
+                        );
+                      } else {
+                        await _repository.create(
+                          invoiceNumber: number.text.trim(),
+                          clientId: selectedClientId.value!,
+                          date: DateTime.now(),
+                          items: inputs,
+                        );
+                      }
+                      if (context.mounted) Navigator.pop(context, true);
                     } catch (error) {
-                      if (dialogContext.mounted) ScaffoldMessenger.of(dialogContext).showSnackBar(SnackBar(content: Text('Erreur : $error')));
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur : $error')));
+                      }
                     }
                   },
                   child: Text(editing ? 'Enregistrer' : 'Créer'),
@@ -250,128 +368,50 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
       );
     } finally {
       number.dispose();
+      selectedClientId.dispose();
       for (final line in lines) {
         line.dispose();
       }
     }
   }
 
-  Future<ClientModel?> _clientFor(InvoiceModel invoice) async {
-    if (invoice.clientId == null) return null;
-    final clients = await ClientRepository().list();
-    for (final client in clients) {
-      if (client.id == invoice.clientId) return client;
-    }
-    return null;
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
-
-  Future<Uint8List> _buildPdf(InvoiceDetails details, ClientModel? client) => _pdfService.build(
-        details,
-        client: client,
-        ownerEmail: SupabaseClientService.client.auth.currentUser?.email,
-      );
-
-  Future<void> _openDetails(InvoiceModel invoice) async {
-    try {
-      final details = await _repository.getDetails(invoice.id);
-      final client = await _clientFor(invoice);
-      if (!mounted) return;
-      await showModalBottomSheet<void>(
-        context: context,
-        isScrollControlled: true,
-        showDragHandle: true,
-        builder: (sheetContext) => Padding(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(details.invoice.invoiceNumber, style: Theme.of(sheetContext).textTheme.headlineSmall),
-                Text('${details.invoice.date.day.toString().padLeft(2, '0')}/${details.invoice.date.month.toString().padLeft(2, '0')}/${details.invoice.date.year} • ${details.invoice.status}'),
-                if (client != null) Padding(padding: const EdgeInsets.only(top: 4), child: Text('Client : ${client.name}')),
-                const SizedBox(height: 12),
-                ...details.items.map((item) => ListTile(contentPadding: EdgeInsets.zero, title: Text(item.description), subtitle: Text('${item.quantity} × ${item.unitPrice.toStringAsFixed(2)} DH • TVA ${item.taxRate.toStringAsFixed(2)}%'), trailing: Text('${item.totalTtc.toStringAsFixed(2)} DH'))),
-                const Divider(),
-                _TotalRow(label: 'Total HT', value: details.calculatedHt),
-                _TotalRow(label: 'TVA', value: details.calculatedTva),
-                _TotalRow(label: 'Total TTC', value: details.calculatedTtc, bold: true),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    OutlinedButton.icon(onPressed: () { Navigator.pop(sheetContext); _previewPdf(details, client); }, icon: const Icon(Icons.picture_as_pdf), label: const Text('Aperçu PDF')),
-                    OutlinedButton.icon(onPressed: () => _sharePdf(details, client), icon: const Icon(Icons.share), label: const Text('Partager')),
-                    OutlinedButton.icon(onPressed: () => _printPdf(details, client), icon: const Icon(Icons.print), label: const Text('Imprimer')),
-                  ],
-                ),
-                if (invoice.status == 'draft') ...[
-                  const SizedBox(height: 8),
-                  OutlinedButton.icon(onPressed: () async { Navigator.pop(sheetContext); await _editDraft(invoice); }, icon: const Icon(Icons.edit_outlined), label: const Text('Modifier la facture')),
-                  OutlinedButton.icon(onPressed: () async { try { await _repository.updateStatus(invoice.id, 'issued'); if (mounted) setState(() => _future = _repository.list()); if (sheetContext.mounted) Navigator.pop(sheetContext); } catch (error) { if (mounted) _showError('Erreur : $error'); } }, icon: const Icon(Icons.check), label: const Text('Marquer comme émise')),
-                  TextButton.icon(onPressed: () async { try { await _repository.delete(invoice.id); if (sheetContext.mounted) Navigator.pop(sheetContext); if (mounted) setState(() => _future = _repository.list()); } catch (error) { if (mounted) _showError('Erreur : $error'); } }, icon: const Icon(Icons.delete_outline), label: const Text('Supprimer la facture')),
-                ],
-              ],
-            ),
-          ),
-        ),
-      );
-    } catch (error) {
-      if (mounted) _showError('Erreur : $error');
-    }
-  }
-
-  Future<void> _previewPdf(InvoiceDetails details, ClientModel? client) async {
-    if (!mounted) return;
-    Navigator.of(context).push(MaterialPageRoute(builder: (_) => Scaffold(appBar: AppBar(title: Text('Facture ${details.invoice.invoiceNumber}')), body: PdfPreview(canChangePageFormat: false, canChangeOrientation: false, allowSharing: false, allowPrinting: false, build: (_) => _buildPdf(details, client)))));
-  }
-
-  Future<void> _sharePdf(InvoiceDetails details, ClientModel? client) async {
-    try {
-      final bytes = await _buildPdf(details, client);
-      await Printing.sharePdf(bytes: bytes, filename: 'facture-${details.invoice.invoiceNumber}.pdf', subject: 'Facture ${details.invoice.invoiceNumber}');
-    } catch (error) {
-      if (mounted) _showError('Erreur PDF : $error');
-    }
-  }
-
-  Future<void> _printPdf(InvoiceDetails details, ClientModel? client) async {
-    try {
-      await Printing.layoutPdf(name: 'Facture ${details.invoice.invoiceNumber}', onLayout: (_) => _buildPdf(details, client));
-    } catch (error) {
-      if (mounted) _showError('Erreur impression : $error');
-    }
-  }
-
-  void _showError(String message) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.invoices)),
+      appBar: AppBar(
+        title: Text(l10n.invoices),
+        actions: [IconButton(onPressed: _refresh, icon: const Icon(Icons.refresh))],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _createInvoice,
+        icon: const Icon(Icons.add),
+        label: const Text('Nouvelle facture'),
+      ),
       body: FutureBuilder<List<InvoiceModel>>(
         future: _future,
         builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) return const Center(child: CircularProgressIndicator());
-          if (snapshot.hasError) return Center(child: Padding(padding: const EdgeInsets.all(24), child: Text('Impossible de charger les factures.\n${snapshot.error}')));
-          final invoices = snapshot.data ?? const <InvoiceModel>[];
-          if (invoices.isEmpty) return const Center(child: Text('Aucune facture.\nCréez votre première facture.', textAlign: TextAlign.center));
+          if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+          if (snapshot.hasError) return Center(child: Text('Erreur : ${snapshot.error}'));
+          final invoices = snapshot.data ?? [];
+          if (invoices.isEmpty) return const Center(child: Text('Aucune facture.'));
           return RefreshIndicator(
-            onRefresh: () async { setState(() => _future = _repository.list()); await _future; },
-            child: ListView.separated(
+            onRefresh: _refresh,
+            child: ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: invoices.length,
-              separatorBuilder: (_, index) => const SizedBox(height: 8),
-              itemBuilder: (_, index) {
+              itemBuilder: (context, index) {
                 final invoice = invoices[index];
                 return Card(
                   child: ListTile(
-                    onTap: () => _openDetails(invoice),
-                    leading: CircleAvatar(child: Icon(invoice.status == 'draft' ? Icons.edit_note : Icons.receipt_long)),
+                    onTap: () => _showInvoice(invoice),
                     title: Text(invoice.invoiceNumber),
-                    subtitle: Text('${invoice.status} • ${invoice.date.day.toString().padLeft(2, '0')}/${invoice.date.month.toString().padLeft(2, '0')}/${invoice.date.year}'),
-                    trailing: Text('${invoice.totalTtc.toStringAsFixed(2)} DH', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Text('${invoice.status} • ${invoice.totalTtc.toStringAsFixed(2)} MAD'),
+                    trailing: const Icon(Icons.chevron_right),
                   ),
                 );
               },
@@ -379,26 +419,63 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton.extended(onPressed: _createInvoice, icon: const Icon(Icons.add), label: const Text('Nouvelle facture')),
     );
   }
 }
 
-class _TotalRow extends StatelessWidget {
-  const _TotalRow({required this.label, required this.value, this.bold = false});
-  final String label;
-  final double value;
-  final bool bold;
+class _InvoiceDetailsSheet extends StatelessWidget {
+  const _InvoiceDetailsSheet({
+    required this.invoice,
+    required this.details,
+    this.onEdit,
+    this.onDelete,
+    this.onIssue,
+    required this.onPreview,
+    required this.onShare,
+    required this.onPrint,
+  });
+
+  final InvoiceModel invoice;
+  final InvoiceDetails details;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
+  final VoidCallback? onIssue;
+  final VoidCallback onPreview;
+  final VoidCallback onShare;
+  final VoidCallback onPrint;
 
   @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 3),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(label, style: TextStyle(fontWeight: bold ? FontWeight.bold : FontWeight.normal)),
-            Text('${value.toStringAsFixed(2)} DH', style: TextStyle(fontWeight: bold ? FontWeight.bold : FontWeight.normal)),
-          ],
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(invoice.invoiceNumber, style: Theme.of(context).textTheme.headlineSmall),
+              Text('Statut : ${invoice.status}'),
+              const SizedBox(height: 12),
+              ...details.items.map((item) => ListTile(
+                    title: Text(item.description),
+                    subtitle: Text('${item.quantity} × ${item.unitPrice.toStringAsFixed(2)} MAD • TVA ${item.taxRate}%'),
+                    trailing: Text('${item.totalTtc.toStringAsFixed(2)} MAD'),
+                  )),
+              const Divider(),
+              Text('Total HT : ${details.totalHt.toStringAsFixed(2)} MAD'),
+              Text('TVA : ${details.totalTva.toStringAsFixed(2)} MAD'),
+              Text('Total TTC : ${details.totalTtc.toStringAsFixed(2)} MAD', style: const TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 16),
+              if (onEdit != null) FilledButton.icon(onPressed: onEdit, icon: const Icon(Icons.edit), label: const Text('Modifier la facture')),
+              if (onIssue != null) FilledButton.icon(onPressed: onIssue, icon: const Icon(Icons.check_circle_outline), label: const Text('Émettre')),
+              if (onDelete != null) OutlinedButton.icon(onPressed: onDelete, icon: const Icon(Icons.delete_outline), label: const Text('Supprimer')),
+              OutlinedButton.icon(onPressed: onPreview, icon: const Icon(Icons.picture_as_pdf_outlined), label: const Text('Aperçu PDF')),
+              OutlinedButton.icon(onPressed: onShare, icon: const Icon(Icons.share_outlined), label: const Text('Partager PDF')),
+              OutlinedButton.icon(onPressed: onPrint, icon: const Icon(Icons.print_outlined), label: const Text('Imprimer')),
+            ],
+          ),
         ),
-      );
+      ),
+    );
+  }
 }
