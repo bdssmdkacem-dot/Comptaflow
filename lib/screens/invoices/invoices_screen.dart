@@ -1,10 +1,7 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:printing/printing.dart';
 
 import '../../core/services/invoice_pdf_service.dart';
-import '../../core/services/supabase_client.dart';
 import '../../data/models/client.dart';
 import '../../data/models/invoice.dart';
 import '../../data/models/product.dart';
@@ -21,8 +18,6 @@ class InvoicesScreen extends StatefulWidget {
 }
 
 class _InvoiceDraftLine {
-  _InvoiceDraftLine();
-
   ProductModel? product;
   final description = TextEditingController();
   final quantity = TextEditingController(text: '1');
@@ -67,7 +62,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
       final products = await ProductRepository().list();
       if (!mounted) return;
       final result = await _invoiceDialog(clients: clients, products: products);
-      if (result != null && mounted) setState(() => _future = _repository.list());
+      if (result == true && mounted) setState(() => _future = _repository.list());
     } catch (error) {
       if (mounted) _showError('Erreur : $error');
     }
@@ -86,7 +81,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
         clients: clients,
         products: products,
       );
-      if (result != null && mounted) setState(() => _future = _repository.list());
+      if (result == true && mounted) setState(() => _future = _repository.list());
     } catch (error) {
       if (mounted) _showError('Erreur : $error');
     }
@@ -103,7 +98,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
       await showModalBottomSheet<void>(
         context: context,
         isScrollControlled: true,
-        builder: (context) => _InvoiceDetailsSheet(
+        builder: (_) => _InvoiceDetailsSheet(
           invoice: invoice,
           details: details,
           onEdit: invoice.status == 'draft' ? () => _editDraft(invoice) : null,
@@ -122,10 +117,9 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
   Future<void> _issueDraft(InvoiceModel invoice) async {
     try {
       await _repository.issue(invoice.id);
-      if (mounted) {
-        Navigator.of(context).pop();
-        setState(() => _future = _repository.list());
-      }
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      setState(() => _future = _repository.list());
     } catch (error) {
       if (mounted) _showError('Impossible d’émettre la facture : $error');
     }
@@ -134,7 +128,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
   Future<void> _deleteDraft(InvoiceModel invoice) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (_) => AlertDialog(
         title: const Text('Supprimer la facture ?'),
         content: Text('La facture ${invoice.invoiceNumber} sera supprimée définitivement.'),
         actions: [
@@ -146,10 +140,9 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
     if (confirmed != true) return;
     try {
       await _repository.delete(invoice.id);
-      if (mounted) {
-        Navigator.of(context).pop();
-        setState(() => _future = _repository.list());
-      }
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      setState(() => _future = _repository.list());
     } catch (error) {
       if (mounted) _showError('Impossible de supprimer la facture : $error');
     }
@@ -161,12 +154,12 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
       if (!mounted) return;
       await showDialog<void>(
         context: context,
-        builder: (context) => Dialog(
+        builder: (_) => Dialog(
           child: SizedBox(
             width: 900,
             height: 700,
             child: PdfPreview(
-              build: (format) async => bytes,
+              build: (_) async => bytes,
               allowPrinting: false,
               allowSharing: false,
               canChangePageFormat: false,
@@ -205,8 +198,9 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
     required List<ProductModel> products,
   }) async {
     final editing = invoice != null;
-    final number = TextEditingController(text: editing ? invoice.invoiceNumber : '');
-    final selectedClientId = ValueNotifier<String?>(editing ? invoice.clientId : null);
+    final currentInvoice = invoice;
+    final number = TextEditingController(text: currentInvoice?.invoiceNumber ?? '');
+    final selectedClientId = ValueNotifier<String?>(currentInvoice?.clientId);
     final lines = <_InvoiceDraftLine>[];
 
     if (details != null) {
@@ -224,7 +218,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
     try {
       return await showDialog<bool>(
         context: context,
-        builder: (context) => StatefulBuilder(
+        builder: (dialogContext) => StatefulBuilder(
           builder: (context, setDialogState) {
             double totalHt() => lines.fold(0, (sum, line) => sum + line.ht);
             double totalTva() => lines.fold(0, (sum, line) => sum + line.tva);
@@ -249,12 +243,12 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                       ValueListenableBuilder<String?>(
                         valueListenable: selectedClientId,
                         builder: (context, value, _) => DropdownButtonFormField<String>(
-                          value: value,
+                          initialValue: value,
                           decoration: const InputDecoration(labelText: 'Client'),
                           items: clients
                               .map((client) => DropdownMenuItem(value: client.id, child: Text(client.name)))
                               .toList(),
-                          onChanged: (value) => selectedClientId.value = value,
+                          onChanged: (next) => selectedClientId.value = next,
                         ),
                       ),
                       const SizedBox(height: 20),
@@ -280,7 +274,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                                   ],
                                 ),
                                 DropdownButtonFormField<ProductModel>(
-                                  value: line.product,
+                                  initialValue: line.product,
                                   decoration: const InputDecoration(labelText: 'Produit / service'),
                                   items: products
                                       .map((product) => DropdownMenuItem(value: product, child: Text(product.name)))
@@ -290,7 +284,10 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                                     setDialogState(() => line.useProduct(product));
                                   },
                                 ),
-                                TextField(controller: line.description, decoration: const InputDecoration(labelText: 'Description')),
+                                TextField(
+                                  controller: line.description,
+                                  decoration: const InputDecoration(labelText: 'Description'),
+                                ),
                                 Row(
                                   children: [
                                     Expanded(child: TextField(controller: line.quantity, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Qté'))),
@@ -319,11 +316,12 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                 ),
               ),
               actions: [
-                TextButton(onPressed: () => Navigator.pop(context), child: const Text('Annuler')),
+                TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Annuler')),
                 FilledButton(
                   onPressed: () async {
                     try {
-                      if (selectedClientId.value == null) throw Exception('Sélectionnez un client.');
+                      final clientId = selectedClientId.value;
+                      if (clientId == null) throw Exception('Sélectionnez un client.');
                       final inputs = lines
                           .map((line) => InvoiceItemInput(
                                 description: line.description.text.trim(),
@@ -336,26 +334,26 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                         throw Exception('Vérifiez les lignes de facture.');
                       }
 
-                      if (editing) {
+                      if (editing && currentInvoice != null) {
                         await _repository.updateDraft(
-                          invoice!.id,
+                          currentInvoice.id,
                           invoiceNumber: number.text.trim(),
-                          clientId: selectedClientId.value!,
-                          date: invoice.date,
+                          clientId: clientId,
+                          date: currentInvoice.date,
                           items: inputs,
                         );
                       } else {
                         await _repository.create(
                           invoiceNumber: number.text.trim(),
-                          clientId: selectedClientId.value!,
+                          clientId: clientId,
                           date: DateTime.now(),
                           items: inputs,
                         );
                       }
-                      if (context.mounted) Navigator.pop(context, true);
+                      if (dialogContext.mounted) Navigator.pop(dialogContext, true);
                     } catch (error) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur : $error')));
+                      if (dialogContext.mounted) {
+                        ScaffoldMessenger.of(dialogContext).showSnackBar(SnackBar(content: Text('Erreur : $error')));
                       }
                     }
                   },
