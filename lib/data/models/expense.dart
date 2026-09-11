@@ -21,6 +21,8 @@ class ExpenseModel {
   final DateTime date;
   final String? notes;
 
+  DateTime get expenseDate => date;
+
   double get taxAmount => amountHt * taxRate / 100;
   double get totalTtc => amountHt + taxAmount;
 
