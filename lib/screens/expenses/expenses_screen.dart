@@ -17,11 +17,11 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
   static const List<String> _categories = <String>[
     'Achats',
     'Transport',
-    'Télécom',
     'Loyer',
-    'Services',
     'Salaires',
-    'Autre',
+    'Services',
+    'Télécommunications',
+    'Autres',
   ];
 
   @override
@@ -38,298 +38,245 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
   }
 
   Future<void> _openForm({ExpenseModel? expense}) async {
-    final GlobalKey<FormState> formKey = GlobalKey<FormState>();
-    final TextEditingController supplier = TextEditingController(
+    final supplierController = TextEditingController(
       text: expense?.supplierName ?? '',
     );
-    final TextEditingController description = TextEditingController(
+    final descriptionController = TextEditingController(
       text: expense?.description ?? '',
     );
-    final TextEditingController amount = TextEditingController(
+    final amountController = TextEditingController(
       text: expense?.amountHt.toStringAsFixed(2) ?? '',
     );
-    final TextEditingController tax = TextEditingController(
-      text: expense?.taxRate.toStringAsFixed(2) ?? '0',
+    final taxController = TextEditingController(
+      text: expense?.taxRate.toStringAsFixed(2) ?? '20',
     );
-    final TextEditingController notes = TextEditingController(
-      text: expense?.notes ?? '',
-    );
+    final notesController = TextEditingController(text: expense?.notes ?? '');
 
     String category = expense?.category ?? _categories.first;
-    DateTime date = expense?.date ?? DateTime.now();
+    DateTime date = expense?.expenseDate ?? DateTime.now();
+    String? error;
 
-    final bool? saved = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return StatefulBuilder(
-          builder: (BuildContext formContext, StateSetter setDialogState) {
-            final double ht =
-                double.tryParse(amount.text.replaceAll(',', '.')) ?? 0;
-            final double tva =
-                double.tryParse(tax.text.replaceAll(',', '.')) ?? 0;
-            final double tvaAmount = ht * tva / 100;
-            final double ttc = ht + tvaAmount;
+    try {
+      final saved = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) {
+          return StatefulBuilder(
+            builder: (context, setDialogState) {
+              final amount = double.tryParse(amountController.text) ?? 0;
+              final tax = double.tryParse(taxController.text) ?? 0;
+              final tva = amount * tax / 100;
+              final ttc = amount + tva;
 
-            return AlertDialog(
-              title: Text(
-                expense == null
-                    ? 'Nouvelle dépense'
-                    : 'Modifier la dépense',
-              ),
-              content: SizedBox(
-                width: 560,
-                child: Form(
-                  key: formKey,
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        TextFormField(
-                          controller: supplier,
-                          autofocus: true,
-                          decoration: const InputDecoration(
-                            labelText: 'Fournisseur',
-                          ),
-                          validator: (String? value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Fournisseur requis';
-                            }
-                            return null;
-                          },
+              return AlertDialog(
+                title: Text(expense == null ? 'Nouvelle dépense' : 'Modifier la dépense'),
+                content: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextField(
+                        controller: supplierController,
+                        decoration: const InputDecoration(
+                          labelText: 'Fournisseur *',
                         ),
-                        TextFormField(
-                          controller: description,
-                          decoration: const InputDecoration(
-                            labelText: 'Description',
-                          ),
-                          validator: (String? value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Description requise';
-                            }
-                            return null;
-                          },
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: descriptionController,
+                        decoration: const InputDecoration(
+                          labelText: 'Description *',
                         ),
-                        DropdownButtonFormField<String>(
-                          initialValue: category,
-                          decoration: const InputDecoration(
-                            labelText: 'Catégorie',
-                          ),
-                          items: _categories
-                              .map(
-                                (String value) => DropdownMenuItem<String>(
-                                  value: value,
-                                  child: Text(value),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: (String? value) {
-                            if (value != null) {
-                              setDialogState(() {
-                                category = value;
-                              });
-                            }
-                          },
+                      ),
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<String>(
+                        value: category,
+                        decoration: const InputDecoration(
+                          labelText: 'Catégorie',
                         ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: <Widget>[
-                            Expanded(
-                              child: TextFormField(
-                                controller: amount,
-                                keyboardType:
-                                    const TextInputType.numberWithOptions(
-                                  decimal: true,
-                                ),
-                                onChanged: (_) => setDialogState(() {}),
-                                decoration: const InputDecoration(
-                                  labelText: 'Montant HT (DH)',
-                                ),
-                                validator: (String? value) {
-                                  final double? parsed = double.tryParse(
-                                    (value ?? '').replaceAll(',', '.'),
-                                  );
-                                  if (parsed == null || parsed < 0) {
-                                    return 'Montant invalide';
-                                  }
-                                  return null;
-                                },
+                        items: _categories
+                            .map(
+                              (item) => DropdownMenuItem(
+                                value: item,
+                                child: Text(item),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (value) {
+                          if (value != null) {
+                            setDialogState(() => category = value);
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: amountController,
+                              keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true,
+                              ),
+                              onChanged: (_) => setDialogState(() {}),
+                              decoration: const InputDecoration(
+                                labelText: 'Montant HT *',
+                                suffixText: 'DH',
                               ),
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: TextFormField(
-                                controller: tax,
-                                keyboardType:
-                                    const TextInputType.numberWithOptions(
-                                  decimal: true,
-                                ),
-                                onChanged: (_) => setDialogState(() {}),
-                                decoration: const InputDecoration(
-                                  labelText: 'TVA %',
-                                ),
-                                validator: (String? value) {
-                                  final double? parsed = double.tryParse(
-                                    (value ?? '').replaceAll(',', '.'),
-                                  );
-                                  if (parsed == null ||
-                                      parsed < 0 ||
-                                      parsed > 100) {
-                                    return 'TVA invalide';
-                                  }
-                                  return null;
-                                },
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: TextField(
+                              controller: taxController,
+                              keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true,
+                              ),
+                              onChanged: (_) => setDialogState(() {}),
+                              decoration: const InputDecoration(
+                                labelText: 'TVA',
+                                suffixText: '%',
                               ),
                             ),
-                          ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.calendar_today_outlined),
+                        title: const Text('Date'),
+                        subtitle: Text(
+                          '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}',
                         ),
-                        ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: const Icon(Icons.calendar_today_outlined),
-                          title: const Text('Date'),
-                          subtitle: Text(_formatDate(date)),
-                          onTap: () async {
-                            final DateTime? picked = await showDatePicker(
-                              context: formContext,
-                              firstDate: DateTime(2020),
-                              lastDate: DateTime(2100),
-                              initialDate: date,
-                            );
-                            if (picked != null) {
-                              setDialogState(() {
-                                date = picked;
-                              });
-                            }
-                          },
-                        ),
-                        TextFormField(
-                          controller: notes,
-                          maxLines: 2,
-                          decoration: const InputDecoration(
-                            labelText: 'Notes (optionnel)',
+                        onTap: () async {
+                          final picked = await showDatePicker(
+                            context: context,
+                            firstDate: DateTime(2020),
+                            lastDate: DateTime(2100),
+                            initialDate: date,
+                          );
+                          if (picked != null) {
+                            setDialogState(() => date = picked);
+                          }
+                        },
+                      ),
+                      TextField(
+                        controller: notesController,
+                        maxLines: 2,
+                        decoration: const InputDecoration(labelText: 'Notes'),
+                      ),
+                      if (error != null) ...[
+                        const SizedBox(height: 12),
+                        Text(
+                          error!,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
                           ),
                         ),
-                        const Divider(height: 24),
-                        _AmountRow(label: 'HT', value: ht),
-                        _AmountRow(label: 'TVA', value: tvaAmount),
-                        _AmountRow(label: 'TTC', value: ttc, bold: true),
                       ],
-                    ),
+                      const SizedBox(height: 12),
+                      _AmountRow(label: 'TVA', value: tva),
+                      _AmountRow(label: 'Total TTC', value: ttc),
+                    ],
                   ),
                 ),
-              ),
-              actions: <Widget>[
-                TextButton(
-                  onPressed: () => Navigator.pop(dialogContext, false),
-                  child: const Text('Annuler'),
-                ),
-                FilledButton(
-                  onPressed: () async {
-                    if (!formKey.currentState!.validate()) {
-                      return;
-                    }
-
-                    try {
-                      final double parsedAmount = double.parse(
-                        amount.text.replaceAll(',', '.'),
-                      );
-                      final double parsedTax = double.parse(
-                        tax.text.replaceAll(',', '.'),
-                      );
-
-                      if (expense == null) {
-                        await _repository.create(
-                          supplierName: supplier.text,
-                          description: description.text,
-                          category: category,
-                          amountHt: parsedAmount,
-                          taxRate: parsedTax,
-                          date: date,
-                          notes: notes.text,
-                        );
-                      } else {
-                        await _repository.update(
-                          expense.id,
-                          supplierName: supplier.text,
-                          description: description.text,
-                          category: category,
-                          amountHt: parsedAmount,
-                          taxRate: parsedTax,
-                          date: date,
-                          notes: notes.text,
-                        );
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(false),
+                    child: const Text('Annuler'),
+                  ),
+                  FilledButton(
+                    onPressed: () async {
+                      final amount = double.tryParse(amountController.text);
+                      final tax = double.tryParse(taxController.text);
+                      if (supplierController.text.trim().isEmpty ||
+                          descriptionController.text.trim().isEmpty) {
+                        setDialogState(() => error = 'Veuillez remplir les champs obligatoires.');
+                        return;
+                      }
+                      if (amount == null || tax == null || amount < 0 || tax < 0 || tax > 100) {
+                        setDialogState(() => error = 'Montant ou TVA invalide.');
+                        return;
                       }
 
-                      if (dialogContext.mounted) {
-                        Navigator.pop(dialogContext, true);
+                      try {
+                        if (expense == null) {
+                          await _repository.create(
+                            supplierName: supplierController.text,
+                            description: descriptionController.text,
+                            category: category,
+                            amountHt: amount,
+                            taxRate: tax,
+                            date: date,
+                            notes: notesController.text,
+                          );
+                        } else {
+                          await _repository.update(
+                            expense.id,
+                            supplierName: supplierController.text,
+                            description: descriptionController.text,
+                            category: category,
+                            amountHt: amount,
+                            taxRate: tax,
+                            date: date,
+                            notes: notesController.text,
+                          );
+                        }
+                        if (dialogContext.mounted) {
+                          Navigator.of(dialogContext).pop(true);
+                        }
+                      } catch (e) {
+                        setDialogState(() => error = e.toString());
                       }
-                    } catch (error) {
-                      if (dialogContext.mounted) {
-                        ScaffoldMessenger.of(dialogContext).showSnackBar(
-                          SnackBar(content: Text('Erreur : $error')),
-                        );
-                      }
-                    }
-                  },
-                  child: const Text('Enregistrer'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
+                    },
+                    child: Text(expense == null ? 'Ajouter' : 'Enregistrer'),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      );
 
-    supplier.dispose();
-    description.dispose();
-    amount.dispose();
-    tax.dispose();
-    notes.dispose();
-
-    if (saved == true && mounted) {
-      setState(() {
-        _future = _repository.list();
-      });
+      if (saved == true && mounted) {
+        await _reload();
+      }
+    } finally {
+      supplierController.dispose();
+      descriptionController.dispose();
+      amountController.dispose();
+      taxController.dispose();
+      notesController.dispose();
     }
   }
 
   Future<void> _delete(ExpenseModel expense) async {
-    final bool? confirmed = await showDialog<bool>(
+    final confirmed = await showDialog<bool>(
       context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: const Text('Supprimer ?'),
-          content: Text(
-            'Supprimer la dépense « ${expense.description} » ?',
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Supprimer la dépense ?'),
+        content: Text('Cette action supprimera « ${expense.description} ». '),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Annuler'),
           ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('Annuler'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('Supprimer'),
-            ),
-          ],
-        );
-      },
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Supprimer'),
+          ),
+        ],
+      ),
     );
 
-    if (confirmed != true) {
-      return;
-    }
+    if (confirmed != true) return;
 
     try {
       await _repository.delete(expense.id);
-      if (mounted) {
-        await _reload();
-      }
-    } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur : $error')),
-        );
-      }
+      if (mounted) await _reload();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Suppression impossible : $e')),
+      );
     }
   }
 
@@ -338,29 +285,45 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dépenses'),
+        actions: [
+          IconButton(
+            tooltip: 'Actualiser',
+            onPressed: _reload,
+            icon: const Icon(Icons.refresh),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _openForm,
+        icon: const Icon(Icons.add),
+        label: const Text('Dépense'),
       ),
       body: FutureBuilder<List<ExpenseModel>>(
         future: _future,
-        builder: (BuildContext context, AsyncSnapshot<List<ExpenseModel>> snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) {
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-
           if (snapshot.hasError) {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
-                child: Text(
-                  'Impossible de charger les dépenses.\n${snapshot.error}',
-                  textAlign: TextAlign.center,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.error_outline, size: 48),
+                    const SizedBox(height: 12),
+                    Text('Impossible de charger les dépenses : ${snapshot.error}'),
+                    const SizedBox(height: 12),
+                    FilledButton(onPressed: _reload, child: const Text('Réessayer')),
+                  ],
                 ),
               ),
             );
           }
 
-          final List<ExpenseModel> expenses =
-              snapshot.data ?? const <ExpenseModel>[];
-          final double total = expenses.fold<double>(
+          final expenses = snapshot.data ?? <ExpenseModel>[];
+          final total = expenses.fold<double>(
             0,
             (double sum, ExpenseModel item) => sum + item.totalTtc,
           );
@@ -374,7 +337,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
             child: ListView.separated(
               padding: const EdgeInsets.all(16),
               itemCount: expenses.length + 1,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              separatorBuilder: (_, _) => const SizedBox(height: 8),
               itemBuilder: (BuildContext context, int index) {
                 if (index == 0) {
                   return Card(
@@ -389,37 +352,30 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                   );
                 }
 
-                final ExpenseModel expense = expenses[index - 1];
+                final expense = expenses[index - 1];
                 return Card(
                   child: ListTile(
-                    onTap: () => _openForm(expense: expense),
                     leading: const CircleAvatar(
-                      child: Icon(Icons.shopping_cart_outlined),
+                      child: Icon(Icons.receipt_long_outlined),
                     ),
                     title: Text(expense.description),
                     subtitle: Text(
-                      '${expense.supplierName} • ${expense.category} • ${_formatDate(expense.date)}',
+                      '${expense.supplierName} · ${expense.category}\n'
+                      '${expense.amountHt.toStringAsFixed(2)} DH HT · '
+                      '${expense.totalTtc.toStringAsFixed(2)} DH TTC',
                     ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        Text(
-                          '${expense.totalTtc.toStringAsFixed(2)} DH',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        PopupMenuButton<String>(
-                          onSelected: (String value) {
-                            if (value == 'delete') {
-                              _delete(expense);
-                            }
-                          },
-                          itemBuilder: (_) => const <PopupMenuEntry<String>>[
-                            PopupMenuItem<String>(
-                              value: 'delete',
-                              child: Text('Supprimer'),
-                            ),
-                          ],
-                        ),
+                    isThreeLine: true,
+                    trailing: PopupMenuButton<String>(
+                      onSelected: (value) {
+                        if (value == 'edit') {
+                          _openForm(expense: expense);
+                        } else if (value == 'delete') {
+                          _delete(expense);
+                        }
+                      },
+                      itemBuilder: (context) => const [
+                        PopupMenuItem(value: 'edit', child: Text('Modifier')),
+                        PopupMenuItem(value: 'delete', child: Text('Supprimer')),
                       ],
                     ),
                   ),
@@ -429,42 +385,28 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _openForm,
-        icon: const Icon(Icons.add),
-        label: const Text('Ajouter une dépense'),
-      ),
     );
-  }
-
-  String _formatDate(DateTime value) {
-    return '${value.day.toString().padLeft(2, '0')}/${value.month.toString().padLeft(2, '0')}/${value.year}';
   }
 }
 
 class _AmountRow extends StatelessWidget {
-  const _AmountRow({
-    required this.label,
-    required this.value,
-    this.bold = false,
-  });
+  const _AmountRow({required this.label, required this.value});
 
   final String label;
   final double value;
-  final bool bold;
 
   @override
   Widget build(BuildContext context) {
-    final TextStyle style = TextStyle(
-      fontWeight: bold ? FontWeight.bold : FontWeight.normal,
-    );
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
+      padding: const EdgeInsets.only(top: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: <Widget>[
-          Text(label, style: style),
-          Text('${value.toStringAsFixed(2)} DH', style: style),
+        children: [
+          Text(label),
+          Text(
+            '${value.toStringAsFixed(2)} DH',
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
         ],
       ),
     );
@@ -483,13 +425,15 @@ class _EmptyExpenses extends StatelessWidget {
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            const Icon(Icons.receipt_long_outlined, size: 48),
-            const SizedBox(height: 12),
+          children: [
+            const Icon(Icons.receipt_long_outlined, size: 64),
+            const SizedBox(height: 16),
             const Text(
-              'Aucune dépense enregistrée.',
-              textAlign: TextAlign.center,
+              'Aucune dépense',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
+            const SizedBox(height: 8),
+            const Text('Ajoutez votre première dépense pour commencer le suivi.'),
             const SizedBox(height: 16),
             FilledButton.icon(
               onPressed: onAdd,
