@@ -34,7 +34,20 @@ class ProductRepository {
     final current = await SupabaseClientService.client.from('products').select('stock_quantity').eq('id', id).single();
     final currentStock = (current['stock_quantity'] as num?)?.toDouble() ?? 0;
     if (!stockManaged && currentStock != 0) throw StateError('Stock quantity must be zero before disabling stock management');
-    final row = await SupabaseClientService.client.from('products').update({'name': name.trim(), 'description': description, 'reference': reference?.trim().isEmpty == true ? null : reference?.trim(), 'type': type, 'unit': unit, 'unit_price': unitPrice, 'purchase_price': purchasePrice, 'tax_rate': taxRate, 'stock_managed': stockManaged, 'min_stock': minStock, if (active != null) 'active': active}).eq('id', id).select().single();
+    final update = <String, dynamic>{
+      'name': name.trim(),
+      'description': description,
+      'reference': reference?.trim().isEmpty == true ? null : reference?.trim(),
+      'type': type,
+      'unit': unit,
+      'unit_price': unitPrice,
+      'purchase_price': purchasePrice,
+      'tax_rate': taxRate,
+      'stock_managed': stockManaged,
+      'min_stock': minStock,
+    };
+    if (active != null) update['active'] = active;
+    final row = await SupabaseClientService.client.from('products').update(update).eq('id', id).select().single();
     return ProductModel.fromMap(Map<String, dynamic>.from(row));
   }
 
