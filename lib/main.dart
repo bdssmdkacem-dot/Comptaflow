@@ -26,6 +26,17 @@ class ComptaflowApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const gold = Color(0xFFD4A84F);
+    const ink = Color(0xFF050505);
+    const panel = Color(0xFF101010);
+    const panelElevated = Color(0xFF171717);
+
+    final colorScheme = ColorScheme.fromSeed(
+      seedColor: gold,
+      brightness: Brightness.dark,
+      surface: panel,
+    );
+
     return MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: localeProvider),
@@ -41,7 +52,61 @@ class ComptaflowApp extends StatelessWidget {
           supportedLocales: AppLocalizations.supportedLocales,
           theme: ThemeData(
             useMaterial3: true,
-            colorSchemeSeed: const Color(0xFFB8892E),
+            brightness: Brightness.dark,
+            colorScheme: colorScheme,
+            scaffoldBackgroundColor: ink,
+            canvasColor: ink,
+            cardColor: panel,
+            appBarTheme: const AppBarTheme(
+              backgroundColor: ink,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              centerTitle: false,
+            ),
+            navigationBarTheme: NavigationBarThemeData(
+              backgroundColor: panel,
+              indicatorColor: gold.withValues(alpha: 0.22),
+              labelTextStyle: WidgetStatePropertyAll(
+                TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+            cardTheme: CardThemeData(
+              color: panel,
+              elevation: 0,
+              margin: const EdgeInsets.symmetric(vertical: 6),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(color: Colors.white.withValues(alpha: 0.07)),
+              ),
+            ),
+            inputDecorationTheme: InputDecorationTheme(
+              filled: true,
+              fillColor: panelElevated,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: gold, width: 1.4),
+              ),
+            ),
+            filledButtonTheme: FilledButtonThemeData(
+              style: FilledButton.styleFrom(
+                backgroundColor: gold,
+                foregroundColor: ink,
+                minimumSize: const Size(48, 48),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            snackBarTheme: SnackBarThemeData(
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
           ),
           home: const AuthGate(),
         ),
