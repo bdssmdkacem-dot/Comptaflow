@@ -21,7 +21,7 @@ class InvoicesScreen extends StatefulWidget {
 }
 
 class _InvoiceDraftLine {
-  _InvoiceDraftLine();
+  _InvoiceDraftLine({this.product});
 
   ProductModel? product;
   final description = TextEditingController();
@@ -61,32 +61,72 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
     _future = _repository.list();
   }
 
-  String _number() {
-    final now = DateTime.now();
-    return 'FAC-${now.year}-${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}-${now.millisecondsSinceEpoch % 1000000}';
-  }
-
   Future<void> _createInvoice() async {
     try {
       final clients = await ClientRepository().list();
       final products = await ProductRepository().list();
       if (!mounted) return;
+      final result = await _invoiceDialog(clients: clients, products: products);
+      if (result != null && mounted) setState(() => _future = _repository.list());
+    } catch (error) {
+      if (mounted) _showError('Erreur : $error');
+    }
+  }
 
-      final number = TextEditingController(text: _number());
-      String? clientId;
-      final lines = <_InvoiceDraftLine>[_InvoiceDraftLine()];
-      final formKey = GlobalKey<FormState>();
+  Future<void> _editDraft(InvoiceModel invoice) async {
+    if (invoice.status != 'draft') return;
+    try {
+      final details = await _repository.getDetails(invoice.id);
+      final clients = await ClientRepository().list();
+      final products = await ProductRepository().list();
+      if (!mounted) return;
+      final result = await _invoiceDialog(
+        clients: clients,
+        products: products,
+        invoice: invoice,
+        details: details,
+      );
+      if (result == true && mounted) setState(() => _future = _repository.list());
+    } catch (error) {
+      if (mounted) _showError('Impossible de modifier la facture : $error');
+    }
+  }
 
-      final created = await showDialog<bool>(
+  Future<bool?> _invoiceDialog({
+    required List<ClientModel> clients,
+    required List<ProductModel> products,
+    InvoiceModel? invoice,
+    InvoiceDetails? details,
+  }) async {
+    final editing = invoice != null;
+    final number = TextEditingController(text: invoice?.invoiceNumber ?? '');
+    String? clientId = invoice?.clientId;
+    final lines = <_InvoiceDraftLine>[];
+    if (details != null) {
+      for (final item in details.items) {
+        final line = _InvoiceDraftLine();
+        line.description.text = item.description;
+        line.quantity.text = item.quantity.toString();
+        line.price.text = item.unitPrice.toStringAsFixed(2);
+        line.tax.text = item.taxRate.toStringAsFixed(2);
+        lines.add(line);
+      }
+    } else {
+      lines.add(_InvoiceDraftLine());
+    }
+    final formKey = GlobalKey<FormState>();
+
+    try {
+      return await showDialog<bool>(
         context: context,
         builder: (dialogContext) => StatefulBuilder(
           builder: (context, setDialogState) {
             final ht = lines.fold<double>(0, (sum, line) => sum + line.ht);
             final tva = lines.fold<double>(0, (sum, line) => sum + line.tva);
             return AlertDialog(
-              title: const Text('Nouvelle facture'),
+              title: Text(editing ? 'Modifier la facture' : 'Nouvelle facture'),
               content: SizedBox(
-                width: 600,
+                width: 620,
                 child: Form(
                   key: formKey,
                   child: SingleChildScrollView(
@@ -95,6 +135,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                       children: [
                         TextFormField(
                           controller: number,
+                          readOnly: editing,
                           decoration: const InputDecoration(labelText: 'N° facture'),
                           validator: (v) => v == null || v.trim().isEmpty ? 'Numéro requis' : null,
                         ),
@@ -189,31 +230,29 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                       return;
                     }
                     try {
-                      await _repository.create(
-                        invoiceNumber: number.text,
-                        clientId: clientId,
-                        date: DateTime.now(),
-                        items: lines.map((line) => InvoiceLineInput(description: line.description.text, quantity: line.q, unitPrice: line.p, taxRate: line.t)).toList(),
-                      );
+                      final inputs = lines.map((line) => InvoiceLineInput(description: line.description.text, quantity: line.q, unitPrice: line.p, taxRate: line.t)).toList();
+                      if (editing) {
+                        await _repository.updateDraft(invoice.id, invoiceNumber: number.text, clientId: clientId, date: invoice.date, items: inputs);
+                      } else {
+                        await _repository.create(invoiceNumber: number.text.trim().isEmpty ? null : number.text, clientId: clientId, date: DateTime.now(), items: inputs);
+                      }
                       if (dialogContext.mounted) Navigator.pop(dialogContext, true);
                     } catch (error) {
                       if (dialogContext.mounted) ScaffoldMessenger.of(dialogContext).showSnackBar(SnackBar(content: Text('Erreur : $error')));
                     }
                   },
-                  child: const Text('Créer'),
+                  child: Text(editing ? 'Enregistrer' : 'Créer'),
                 ),
               ],
             );
           },
         ),
       );
+    } finally {
       number.dispose();
       for (final line in lines) {
         line.dispose();
       }
-      if (created == true && mounted) setState(() => _future = _repository.list());
-    } catch (error) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur : $error')));
     }
   }
 
@@ -226,55 +265,11 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
     return null;
   }
 
-  Future<Uint8List> _buildPdf(InvoiceDetails details, ClientModel? client) async {
-    return _pdfService.build(
-      details,
-      client: client,
-      ownerEmail: SupabaseClientService.client.auth.currentUser?.email,
-    );
-  }
-
-  Future<void> _previewPdf(InvoiceDetails details, ClientModel? client) async {
-    if (!mounted) return;
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => Scaffold(
-          appBar: AppBar(title: Text('Facture ${details.invoice.invoiceNumber}')),
-          body: PdfPreview(
-            canChangePageFormat: false,
-            canChangeOrientation: false,
-            allowSharing: false,
-            allowPrinting: false,
-            build: (_) => _buildPdf(details, client),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _sharePdf(InvoiceDetails details, ClientModel? client) async {
-    try {
-      final bytes = await _buildPdf(details, client);
-      await Printing.sharePdf(
-        bytes: bytes,
-        filename: 'facture-${details.invoice.invoiceNumber}.pdf',
-        subject: 'Facture ${details.invoice.invoiceNumber}',
+  Future<Uint8List> _buildPdf(InvoiceDetails details, ClientModel? client) => _pdfService.build(
+        details,
+        client: client,
+        ownerEmail: SupabaseClientService.client.auth.currentUser?.email,
       );
-    } catch (error) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur PDF : $error')));
-    }
-  }
-
-  Future<void> _printPdf(InvoiceDetails details, ClientModel? client) async {
-    try {
-      await Printing.layoutPdf(
-        name: 'Facture ${details.invoice.invoiceNumber}',
-        onLayout: (_) => _buildPdf(details, client),
-      );
-    } catch (error) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur impression : $error')));
-    }
-  }
 
   Future<void> _openDetails(InvoiceModel invoice) async {
     try {
@@ -310,19 +305,45 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                     OutlinedButton.icon(onPressed: () => _printPdf(details, client), icon: const Icon(Icons.print), label: const Text('Imprimer')),
                   ],
                 ),
-                const SizedBox(height: 8),
-                if (invoice.status == 'draft')
-                  OutlinedButton.icon(onPressed: () async { await _repository.updateStatus(invoice.id, 'issued'); if (sheetContext.mounted) Navigator.pop(sheetContext); if (mounted) setState(() => _future = _repository.list()); }, icon: const Icon(Icons.check), label: const Text('Marquer comme émise')),
-                TextButton.icon(onPressed: () async { await _repository.delete(invoice.id); if (sheetContext.mounted) Navigator.pop(sheetContext); if (mounted) setState(() => _future = _repository.list()); }, icon: const Icon(Icons.delete_outline), label: const Text('Supprimer la facture')),
+                if (invoice.status == 'draft') ...[
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(onPressed: () async { Navigator.pop(sheetContext); await _editDraft(invoice); }, icon: const Icon(Icons.edit_outlined), label: const Text('Modifier la facture')),
+                  OutlinedButton.icon(onPressed: () async { try { await _repository.updateStatus(invoice.id, 'issued'); if (mounted) setState(() => _future = _repository.list()); if (sheetContext.mounted) Navigator.pop(sheetContext); } catch (error) { if (mounted) _showError('Erreur : $error'); } }, icon: const Icon(Icons.check), label: const Text('Marquer comme émise')),
+                  TextButton.icon(onPressed: () async { try { await _repository.delete(invoice.id); if (sheetContext.mounted) Navigator.pop(sheetContext); if (mounted) setState(() => _future = _repository.list()); } catch (error) { if (mounted) _showError('Erreur : $error'); } }, icon: const Icon(Icons.delete_outline), label: const Text('Supprimer la facture')),
+                ],
               ],
             ),
           ),
         ),
       );
     } catch (error) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur : $error')));
+      if (mounted) _showError('Erreur : $error');
     }
   }
+
+  Future<void> _previewPdf(InvoiceDetails details, ClientModel? client) async {
+    if (!mounted) return;
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => Scaffold(appBar: AppBar(title: Text('Facture ${details.invoice.invoiceNumber}')), body: PdfPreview(canChangePageFormat: false, canChangeOrientation: false, allowSharing: false, allowPrinting: false, build: (_) => _buildPdf(details, client)))));
+  }
+
+  Future<void> _sharePdf(InvoiceDetails details, ClientModel? client) async {
+    try {
+      final bytes = await _buildPdf(details, client);
+      await Printing.sharePdf(bytes: bytes, filename: 'facture-${details.invoice.invoiceNumber}.pdf', subject: 'Facture ${details.invoice.invoiceNumber}');
+    } catch (error) {
+      if (mounted) _showError('Erreur PDF : $error');
+    }
+  }
+
+  Future<void> _printPdf(InvoiceDetails details, ClientModel? client) async {
+    try {
+      await Printing.layoutPdf(name: 'Facture ${details.invoice.invoiceNumber}', onLayout: (_) => _buildPdf(details, client));
+    } catch (error) {
+      if (mounted) _showError('Erreur impression : $error');
+    }
+  }
+
+  void _showError(String message) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
 
   @override
   Widget build(BuildContext context) {
@@ -341,13 +362,13 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
             child: ListView.separated(
               padding: const EdgeInsets.all(16),
               itemCount: invoices.length,
-              separatorBuilder: (_, i) => const SizedBox(height: 8),
-              itemBuilder: (_, i) {
-                final invoice = invoices[i];
+              separatorBuilder: (_, index) => const SizedBox(height: 8),
+              itemBuilder: (_, index) {
+                final invoice = invoices[index];
                 return Card(
                   child: ListTile(
                     onTap: () => _openDetails(invoice),
-                    leading: const CircleAvatar(child: Icon(Icons.receipt_long)),
+                    leading: CircleAvatar(child: Icon(invoice.status == 'draft' ? Icons.edit_note : Icons.receipt_long)),
                     title: Text(invoice.invoiceNumber),
                     subtitle: Text('${invoice.status} • ${invoice.date.day.toString().padLeft(2, '0')}/${invoice.date.month.toString().padLeft(2, '0')}/${invoice.date.year}'),
                     trailing: Text('${invoice.totalTtc.toStringAsFixed(2)} DH', style: const TextStyle(fontWeight: FontWeight.bold)),
