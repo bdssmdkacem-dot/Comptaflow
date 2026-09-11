@@ -152,6 +152,10 @@ class InvoiceDetails {
   double get calculatedTva => items.fold(0, (sum, item) => sum + item.totalTva);
   double get calculatedTtc => calculatedHt + calculatedTva;
 
+  double get totalHt => calculatedHt;
+  double get totalTva => calculatedTva;
+  double get totalTtc => calculatedTtc;
+
   CanonicalInvoice toCanonical({CanonicalInvoiceParty? buyer}) => invoice.toCanonical(
         lines: items.map((item) => item.toCanonical()).toList(growable: false),
         buyer: buyer,
