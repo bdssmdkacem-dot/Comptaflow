@@ -58,10 +58,16 @@ class _ClientDialogState extends State<ClientDialog> {
   String? validEmail(String? v) => v == null || v.trim().isEmpty || v.contains('@') ? null : 'Email invalide';
   String? val(TextEditingController c) => c.text.trim().isEmpty ? null : c.text.trim();
   Future<void> save() async {
-    if (!form.currentState!.validate()) return; setState(() => saving=true);
+    if (!form.currentState!.validate()) {
+      return;
+    }
+    setState(() => saving=true);
     try {
-      if (widget.client == null) await widget.repo.create(name:name.text.trim(), ice:val(ice), ifNumber:val(ifNumber), rcNumber:val(rc), tpNumber:val(tp), phone:val(phone), email:val(email), address:val(address), city:val(city));
-      else await widget.repo.update(id:widget.client!.id, name:name.text.trim(), ice:val(ice), ifNumber:val(ifNumber), rcNumber:val(rc), tpNumber:val(tp), phone:val(phone), email:val(email), address:val(address), city:val(city));
+      if (widget.client == null) {
+        await widget.repo.create(name:name.text.trim(), ice:val(ice), ifNumber:val(ifNumber), rcNumber:val(rc), tpNumber:val(tp), phone:val(phone), email:val(email), address:val(address), city:val(city));
+      } else {
+        await widget.repo.update(id:widget.client!.id, name:name.text.trim(), ice:val(ice), ifNumber:val(ifNumber), rcNumber:val(rc), tpNumber:val(tp), phone:val(phone), email:val(email), address:val(address), city:val(city));
+      }
       if (mounted) Navigator.pop(context, true);
     } catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur : $e'))); } finally { if (mounted) setState(() => saving=false); }
   }
