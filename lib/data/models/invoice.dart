@@ -1,3 +1,5 @@
+import 'canonical_invoice.dart';
+
 class InvoiceModel {
   const InvoiceModel({
     required this.id,
@@ -10,6 +12,16 @@ class InvoiceModel {
     required this.status,
     this.clientId,
     this.pdfUrl,
+    this.sellerName,
+    this.sellerIce,
+    this.sellerIf,
+    this.sellerRc,
+    this.sellerTp,
+    this.sellerAddress,
+    this.sellerCity,
+    this.sellerPhone,
+    this.sellerEmail,
+    this.paymentTerms,
   });
 
   final String id;
@@ -22,6 +34,51 @@ class InvoiceModel {
   final double totalTtc;
   final String status;
   final String? pdfUrl;
+  final String? sellerName;
+  final String? sellerIce;
+  final String? sellerIf;
+  final String? sellerRc;
+  final String? sellerTp;
+  final String? sellerAddress;
+  final String? sellerCity;
+  final String? sellerPhone;
+  final String? sellerEmail;
+  final String? paymentTerms;
+
+  CanonicalInvoiceStatus get canonicalStatus => switch (status) {
+        'draft' => CanonicalInvoiceStatus.draft,
+        'issued' => CanonicalInvoiceStatus.issued,
+        'paid' => CanonicalInvoiceStatus.paid,
+        'cancelled' => CanonicalInvoiceStatus.cancelled,
+        _ => CanonicalInvoiceStatus.draft,
+      };
+
+  CanonicalInvoice toCanonical({
+    required List<CanonicalInvoiceLine> lines,
+    CanonicalInvoiceParty? buyer,
+  }) {
+    return CanonicalInvoice(
+      id: id,
+      userId: userId,
+      number: invoiceNumber,
+      issueDate: date,
+      status: canonicalStatus,
+      lines: List.unmodifiable(lines),
+      seller: CanonicalInvoiceParty(
+        name: sellerName,
+        ice: sellerIce,
+        ifNumber: sellerIf,
+        rcNumber: sellerRc,
+        tpNumber: sellerTp,
+        address: sellerAddress,
+        city: sellerCity,
+        phone: sellerPhone,
+        email: sellerEmail,
+      ),
+      buyer: buyer,
+      paymentTerms: paymentTerms,
+    );
+  }
 
   factory InvoiceModel.fromMap(Map<String, dynamic> map) => InvoiceModel(
         id: map['id'] as String,
@@ -34,6 +91,16 @@ class InvoiceModel {
         totalTtc: (map['total_ttc'] as num).toDouble(),
         status: map['status'] as String,
         pdfUrl: map['pdf_url'] as String?,
+        sellerName: map['seller_name'] as String?,
+        sellerIce: map['seller_ice'] as String?,
+        sellerIf: map['seller_if'] as String?,
+        sellerRc: map['seller_rc'] as String?,
+        sellerTp: map['seller_tp'] as String?,
+        sellerAddress: map['seller_address'] as String?,
+        sellerCity: map['seller_city'] as String?,
+        sellerPhone: map['seller_phone'] as String?,
+        sellerEmail: map['seller_email'] as String?,
+        paymentTerms: map['payment_terms'] as String?,
       );
 }
 
@@ -58,6 +125,13 @@ class InvoiceItemModel {
   double get totalTva => totalHt * taxRate / 100;
   double get totalTtc => totalHt + totalTva;
 
+  CanonicalInvoiceLine toCanonical() => CanonicalInvoiceLine(
+        description: description,
+        quantity: quantity,
+        unitPriceHt: unitPrice,
+        taxRate: taxRate,
+      );
+
   factory InvoiceItemModel.fromMap(Map<String, dynamic> map) => InvoiceItemModel(
         id: map['id'] as String,
         invoiceId: map['invoice_id'] as String,
@@ -77,4 +151,9 @@ class InvoiceDetails {
   double get calculatedHt => items.fold(0, (sum, item) => sum + item.totalHt);
   double get calculatedTva => items.fold(0, (sum, item) => sum + item.totalTva);
   double get calculatedTtc => calculatedHt + calculatedTva;
+
+  CanonicalInvoice toCanonical({CanonicalInvoiceParty? buyer}) => invoice.toCanonical(
+        lines: items.map((item) => item.toCanonical()).toList(growable: false),
+        buyer: buyer,
+      );
 }
