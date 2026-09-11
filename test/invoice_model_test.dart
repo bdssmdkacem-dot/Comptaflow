@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:comptaflow/data/models/invoice.dart';
 
-afterTest(InvoiceModel invoice, String expected) {
+void afterTest(InvoiceModel invoice, String expected) {
   expect(invoice.canonicalStatus.name, expected);
 }
 
