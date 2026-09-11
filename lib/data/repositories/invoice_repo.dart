@@ -19,6 +19,8 @@ class InvoiceLineInput {
   double get totalTtc => totalHt + totalTva;
 }
 
+typedef InvoiceItemInput = InvoiceLineInput;
+
 class InvoiceRepository {
   Future<List<InvoiceModel>> list() async {
     final rows = await SupabaseClientService.client
@@ -174,6 +176,8 @@ class InvoiceRepository {
         .update({'status': status})
         .eq('id', invoiceId);
   }
+
+  Future<void> issue(String invoiceId) => updateStatus(invoiceId, 'issued');
 
   void _validate(List<InvoiceLineInput> items) {
     for (final item in items) {
