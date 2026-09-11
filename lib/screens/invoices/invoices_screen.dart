@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:printing/printing.dart';
 
+import '../../core/services/invoice_pdf_service.dart';
+import '../../core/services/supabase_client.dart';
+import '../../data/models/client.dart';
 import '../../data/models/invoice.dart';
 import '../../data/models/product.dart';
 import '../../data/repositories/client_repo.dart';
@@ -46,6 +50,7 @@ class _InvoiceDraftLine {
 
 class _InvoicesScreenState extends State<InvoicesScreen> {
   final _repository = InvoiceRepository();
+  final _pdfService = const InvoicePdfService();
   late Future<List<InvoiceModel>> _future;
 
   @override
@@ -187,9 +192,67 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
     }
   }
 
+  Future<ClientModel?> _clientFor(InvoiceModel invoice) async {
+    if (invoice.clientId == null) return null;
+    final clients = await ClientRepository().list();
+    for (final client in clients) {
+      if (client.id == invoice.clientId) return client;
+    }
+    return null;
+  }
+
+  Future<List<int>> _buildPdf(InvoiceDetails details, ClientModel? client) async {
+    return _pdfService.build(
+      details,
+      client: client,
+      ownerEmail: SupabaseClientService.client.auth.currentUser?.email,
+    );
+  }
+
+  Future<void> _previewPdf(InvoiceDetails details, ClientModel? client) async {
+    if (!mounted) return;
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => Scaffold(
+        appBar: AppBar(title: Text('Facture ${details.invoice.invoiceNumber}')),
+        body: PdfPreview(
+          canChangePageFormat: false,
+          canChangeOrientation: false,
+          allowSharing: false,
+          allowPrinting: false,
+          build: (_) => _buildPdf(details, client),
+        ),
+      ),
+    ));
+  }
+
+  Future<void> _sharePdf(InvoiceDetails details, ClientModel? client) async {
+    try {
+      final bytes = await _buildPdf(details, client);
+      await Printing.sharePdf(
+        bytes: bytes,
+        filename: 'facture-${details.invoice.invoiceNumber}.pdf',
+        subject: 'Facture ${details.invoice.invoiceNumber}',
+      );
+    } catch (error) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur PDF : $error')));
+    }
+  }
+
+  Future<void> _printPdf(InvoiceDetails details, ClientModel? client) async {
+    try {
+      await Printing.layoutPdf(
+        name: 'Facture ${details.invoice.invoiceNumber}',
+        onLayout: (_) => _buildPdf(details, client),
+      );
+    } catch (error) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur impression : $error')));
+    }
+  }
+
   Future<void> _openDetails(InvoiceModel invoice) async {
     try {
       final details = await _repository.getDetails(invoice.id);
+      final client = await _clientFor(invoice);
       if (!mounted) return;
       await showModalBottomSheet<void>(
         context: context,
@@ -201,12 +264,23 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
             child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
               Text(details.invoice.invoiceNumber, style: Theme.of(sheetContext).textTheme.headlineSmall),
               Text('${details.invoice.date.day.toString().padLeft(2, '0')}/${details.invoice.date.month.toString().padLeft(2, '0')}/${details.invoice.date.year} • ${details.invoice.status}'),
+              if (client != null) Padding(padding: const EdgeInsets.only(top: 4), child: Text('Client : ${client.name}')),
               const SizedBox(height: 12),
               ...details.items.map((item) => ListTile(contentPadding: EdgeInsets.zero, title: Text(item.description), subtitle: Text('${item.quantity} × ${item.unitPrice.toStringAsFixed(2)} DH • TVA ${item.taxRate.toStringAsFixed(2)}%'), trailing: Text('${item.totalTtc.toStringAsFixed(2)} DH'))),
               const Divider(),
               _TotalRow(label: 'Total HT', value: details.calculatedHt),
               _TotalRow(label: 'TVA', value: details.calculatedTva),
               _TotalRow(label: 'Total TTC', value: details.calculatedTtc, bold: true),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  OutlinedButton.icon(onPressed: () { Navigator.pop(sheetContext); _previewPdf(details, client); }, icon: const Icon(Icons.picture_as_pdf), label: const Text('Aperçu PDF')),
+                  OutlinedButton.icon(onPressed: () => _sharePdf(details, client), icon: const Icon(Icons.share), label: const Text('Partager')),
+                  OutlinedButton.icon(onPressed: () => _printPdf(details, client), icon: const Icon(Icons.print), label: const Text('Imprimer')),
+                ],
+              ),
               const SizedBox(height: 8),
               if (invoice.status == 'draft')
                 OutlinedButton.icon(onPressed: () async { await _repository.updateStatus(invoice.id, 'issued'); if (sheetContext.mounted) Navigator.pop(sheetContext); if (mounted) setState(() => _future = _repository.list()); }, icon: const Icon(Icons.check), label: const Text('Marquer comme émise')),
