@@ -68,7 +68,9 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
               final ttc = amount + tva;
 
               return AlertDialog(
-                title: Text(expense == null ? 'Nouvelle dépense' : 'Modifier la dépense'),
+                title: Text(
+                  expense == null ? 'Nouvelle dépense' : 'Modifier la dépense',
+                ),
                 content: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -88,7 +90,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                       ),
                       const SizedBox(height: 12),
                       DropdownButtonFormField<String>(
-                        value: category,
+                        initialValue: category,
                         decoration: const InputDecoration(
                           labelText: 'Catégorie',
                         ),
@@ -189,10 +191,16 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                       final tax = double.tryParse(taxController.text);
                       if (supplierController.text.trim().isEmpty ||
                           descriptionController.text.trim().isEmpty) {
-                        setDialogState(() => error = 'Veuillez remplir les champs obligatoires.');
+                        setDialogState(
+                          () => error = 'Veuillez remplir les champs obligatoires.',
+                        );
                         return;
                       }
-                      if (amount == null || tax == null || amount < 0 || tax < 0 || tax > 100) {
+                      if (amount == null ||
+                          tax == null ||
+                          amount < 0 ||
+                          tax < 0 ||
+                          tax > 100) {
                         setDialogState(() => error = 'Montant ou TVA invalide.');
                         return;
                       }
@@ -315,7 +323,10 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                     const SizedBox(height: 12),
                     Text('Impossible de charger les dépenses : ${snapshot.error}'),
                     const SizedBox(height: 12),
-                    FilledButton(onPressed: _reload, child: const Text('Réessayer')),
+                    FilledButton(
+                      onPressed: _reload,
+                      child: const Text('Réessayer'),
+                    ),
                   ],
                 ),
               ),
@@ -433,7 +444,9 @@ class _EmptyExpenses extends StatelessWidget {
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            const Text('Ajoutez votre première dépense pour commencer le suivi.'),
+            const Text(
+              'Ajoutez votre première dépense pour commencer le suivi.',
+            ),
             const SizedBox(height: 16),
             FilledButton.icon(
               onPressed: onAdd,
