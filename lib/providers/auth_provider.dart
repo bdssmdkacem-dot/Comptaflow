@@ -34,12 +34,12 @@ class AuthProvider extends ChangeNotifier {
   bool get loading => _loading;
   String? get error => _error;
 
-  Future<void> sendOtp(String phone) async {
+  Future<void> sendOtp(String email) async {
     _loading = true;
     _error = null;
     notifyListeners();
     try {
-      await _repository.sendPhoneOtp(phone);
+      await _repository.sendEmailOtp(email);
     } catch (e) {
       _error = e.toString();
       rethrow;
@@ -49,12 +49,12 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> verifyOtp(String phone, String token) async {
+  Future<void> verifyOtp(String email, String token) async {
     _loading = true;
     _error = null;
     notifyListeners();
     try {
-      await _repository.verifyPhoneOtp(phone, token);
+      await _repository.verifyEmailOtp(email, token);
     } catch (e) {
       _error = e.toString();
       rethrow;
