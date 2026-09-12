@@ -139,6 +139,9 @@ class _AuthGateState extends State<AuthGate> {
   void initState() {
     super.initState();
     AuthDeepLinkService.emailConfirmed.addListener(_onEmailConfirmed);
+    if (AuthDeepLinkService.emailConfirmed.value) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _onEmailConfirmed());
+    }
   }
 
   @override
