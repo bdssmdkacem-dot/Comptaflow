@@ -34,27 +34,30 @@ class AuthProvider extends ChangeNotifier {
   bool get loading => _loading;
   String? get error => _error;
 
-  Future<void> sendOtp(String email) async {
-    _loading = true;
-    _error = null;
-    notifyListeners();
-    try {
-      await _repository.sendEmailOtp(email);
-    } catch (e) {
-      _error = e.toString();
-      rethrow;
-    } finally {
-      _loading = false;
-      notifyListeners();
-    }
+  Future<void> signIn(String email, String password) async {
+    await _run(() => _repository.signInWithPassword(email, password));
   }
 
-  Future<void> verifyOtp(String email, String token) async {
+  Future<void> signUp({
+    required String email,
+    required String password,
+    String? fullName,
+  }) async {
+    await _run(
+      () => _repository.signUpWithPassword(
+        email: email,
+        password: password,
+        fullName: fullName,
+      ),
+    );
+  }
+
+  Future<void> _run(Future<void> Function() action) async {
     _loading = true;
     _error = null;
     notifyListeners();
     try {
-      await _repository.verifyEmailOtp(email, token);
+      await action();
     } catch (e) {
       _error = e.toString();
       rethrow;
