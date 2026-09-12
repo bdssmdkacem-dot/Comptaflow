@@ -19,14 +19,30 @@ class AuthRepository {
   Future<void> signUpWithPassword({
     required String email,
     required String password,
-    String? fullName,
+    required String fullName,
+    required String companyName,
+    required String rc,
+    required String ifNumber,
+    required String ice,
+    required String legalForm,
+    required String address,
+    required String city,
+    required String professionalPhone,
   }) async {
     await _client.auth.signUp(
       email: email,
       password: password,
-      data: fullName == null || fullName.trim().isEmpty
-          ? null
-          : {'full_name': fullName.trim()},
+      data: {
+        'full_name': fullName.trim(),
+        'company_name': companyName.trim(),
+        'rc': rc.trim(),
+        'if_number': ifNumber.trim(),
+        'ice': ice.trim(),
+        'legal_form': legalForm,
+        'address': address.trim(),
+        'city': city.trim(),
+        'professional_phone': professionalPhone.trim(),
+      },
       emailRedirectTo: emailConfirmationRedirect,
     );
   }
