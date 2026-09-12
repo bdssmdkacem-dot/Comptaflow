@@ -1,5 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'auth_deep_link_service.dart';
+
 class SupabaseClientService {
   SupabaseClientService._();
 
@@ -15,6 +17,7 @@ class SupabaseClientService {
     }
 
     await Supabase.initialize(url: url, publishableKey: publishableKey);
+    await AuthDeepLinkService.initialize();
   }
 
   static SupabaseClient get client => Supabase.instance.client;
