@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'core/services/auth_deep_link_service.dart';
 import 'core/services/supabase_client.dart';
 import 'data/repositories/auth_repo.dart';
 import 'data/repositories/invoice_repo.dart';
@@ -26,21 +27,14 @@ Future<void> main() async {
   }
 
   if (initializationError != null) {
-    runApp(
-      StartupErrorApp(
-        error: initializationError,
-        stackTrace: initializationStackTrace,
-      ),
-    );
+    runApp(StartupErrorApp(error: initializationError, stackTrace: initializationStackTrace));
     return;
   }
 
   final localeProvider = LocaleProvider();
   try {
     await localeProvider.load();
-  } catch (_) {
-    // Keep the default locale if persisted preferences cannot be loaded.
-  }
+  } catch (_) {}
 
   runApp(ComptaflowApp(localeProvider: localeProvider));
 }
@@ -55,51 +49,28 @@ class StartupErrorApp extends StatelessWidget {
     const gold = Color(0xFFD4A84F);
     const ink = Color(0xFF050505);
     const panel = Color(0xFF101010);
-
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Comptaflow',
-      theme: ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.dark,
-        colorScheme: ColorScheme.fromSeed(seedColor: gold, brightness: Brightness.dark, surface: panel),
-        scaffoldBackgroundColor: ink,
-      ),
+      theme: ThemeData(useMaterial3: true, brightness: Brightness.dark, colorScheme: ColorScheme.fromSeed(seedColor: gold, brightness: Brightness.dark, surface: panel), scaffoldBackgroundColor: ink),
       home: Scaffold(
         body: SafeArea(
           child: Center(
-            child: SingleChildScrollView(
+            child: Padding(
               padding: const EdgeInsets.all(24),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 560),
-                child: Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.cloud_off_outlined, size: 56, color: gold),
-                        const SizedBox(height: 16),
-                        const Text('Comptaflow ne peut pas démarrer', textAlign: TextAlign.center, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
-                        const SizedBox(height: 12),
-                        const Text('La connexion Supabase n’a pas pu être initialisée. Vérifiez la configuration de l’application puis relancez-la.', textAlign: TextAlign.center),
-                        const SizedBox(height: 16),
-                        SelectableText(error.toString(), textAlign: TextAlign.center),
-                        if (stackTrace != null) ...[
-                          const SizedBox(height: 16),
-                          ExpansionTile(
-                            title: const Text('Détails techniques'),
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.all(12),
-                                child: SelectableText(stackTrace.toString(), style: const TextStyle(fontSize: 11)),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    const Icon(Icons.cloud_off_outlined, size: 56, color: gold),
+                    const SizedBox(height: 16),
+                    const Text('Comptaflow ne peut pas démarrer', textAlign: TextAlign.center, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 12),
+                    const Text('La connexion Supabase n’a pas pu être initialisée.', textAlign: TextAlign.center),
+                    const SizedBox(height: 16),
+                    SelectableText(error.toString(), textAlign: TextAlign.center),
+                    if (stackTrace != null) ExpansionTile(title: const Text('Détails techniques'), children: [Padding(padding: const EdgeInsets.all(12), child: SelectableText(stackTrace.toString(), style: const TextStyle(fontSize: 11)))]),
+                  ]),
                 ),
               ),
             ),
@@ -120,7 +91,6 @@ class ComptaflowApp extends StatelessWidget {
     const ink = Color(0xFF050505);
     const panel = Color(0xFF101010);
     const panelElevated = Color(0xFF171717);
-
     final colorScheme = ColorScheme.fromSeed(seedColor: gold, brightness: Brightness.dark, surface: panel);
 
     return MultiProvider(
@@ -144,27 +114,10 @@ class ComptaflowApp extends StatelessWidget {
             canvasColor: ink,
             cardColor: panel,
             appBarTheme: const AppBarTheme(backgroundColor: ink, foregroundColor: Colors.white, elevation: 0, centerTitle: false),
-            navigationBarTheme: NavigationBarThemeData(
-              backgroundColor: panel,
-              indicatorColor: gold.withValues(alpha: 0.22),
-              labelTextStyle: const WidgetStatePropertyAll(TextStyle(fontWeight: FontWeight.w600)),
-            ),
-            cardTheme: CardThemeData(
-              color: panel,
-              elevation: 0,
-              margin: const EdgeInsets.symmetric(vertical: 6),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Colors.white.withValues(alpha: 0.07))),
-            ),
-            inputDecorationTheme: InputDecorationTheme(
-              filled: true,
-              fillColor: panelElevated,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08))),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08))),
-              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: gold, width: 1.4)),
-            ),
-            filledButtonTheme: FilledButtonThemeData(
-              style: FilledButton.styleFrom(backgroundColor: gold, foregroundColor: ink, minimumSize: const Size(48, 48), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-            ),
+            navigationBarTheme: NavigationBarThemeData(backgroundColor: panel, indicatorColor: gold.withValues(alpha: 0.22), labelTextStyle: const WidgetStatePropertyAll(TextStyle(fontWeight: FontWeight.w600))),
+            cardTheme: CardThemeData(color: panel, elevation: 0, margin: const EdgeInsets.symmetric(vertical: 6), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Colors.white.withValues(alpha: 0.07)))),
+            inputDecorationTheme: InputDecorationTheme(filled: true, fillColor: panelElevated, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08))), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08))), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: gold, width: 1.4))),
+            filledButtonTheme: FilledButtonThemeData(style: FilledButton.styleFrom(backgroundColor: gold, foregroundColor: ink, minimumSize: const Size(48, 48), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)))),
             snackBarTheme: SnackBarThemeData(behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
           ),
           home: const AuthGate(),
@@ -174,8 +127,42 @@ class ComptaflowApp extends StatelessWidget {
   }
 }
 
-class AuthGate extends StatelessWidget {
+class AuthGate extends StatefulWidget {
   const AuthGate({super.key});
+
+  @override
+  State<AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends State<AuthGate> {
+  @override
+  void initState() {
+    super.initState();
+    AuthDeepLinkService.emailConfirmed.addListener(_onEmailConfirmed);
+  }
+
+  @override
+  void dispose() {
+    AuthDeepLinkService.emailConfirmed.removeListener(_onEmailConfirmed);
+    super.dispose();
+  }
+
+  void _onEmailConfirmed() {
+    if (!AuthDeepLinkService.emailConfirmed.value || !mounted) return;
+    AuthDeepLinkService.emailConfirmed.value = false;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      showDialog<void>(
+        context: context,
+        builder: (_) => AlertDialog(
+          icon: const Icon(Icons.verified_outlined),
+          title: const Text('تم تأكيد حسابك'),
+          content: const Text('تم تأكيد بريدك الإلكتروني بنجاح. مرحباً بك في ComptaFlow.'),
+          actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('متابعة'))],
+        ),
+      );
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -204,46 +191,29 @@ class _ProfileGateState extends State<_ProfileGate> {
   Future<bool> _hasProfile() async {
     final user = SupabaseClientService.client.auth.currentUser;
     if (user == null) return false;
-
     final row = await SupabaseClientService.client.from('profiles').select('user_id').eq('user_id', user.id).maybeSingle();
     return row != null;
   }
 
-  void _refreshProfile() {
-    setState(() => _future = _hasProfile());
-  }
+  void _refreshProfile() => setState(() => _future = _hasProfile());
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<bool>(
       future: _future,
       builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
-        }
-
+        if (snapshot.connectionState != ConnectionState.done) return const Scaffold(body: Center(child: CircularProgressIndicator()));
         if (snapshot.hasError) {
-          return Scaffold(
-            body: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.cloud_off_outlined, size: 48),
-                    const SizedBox(height: 16),
-                    const Text('Impossible de vérifier le profil.', textAlign: TextAlign.center),
-                    const SizedBox(height: 12),
-                    Text('${snapshot.error}', textAlign: TextAlign.center),
-                    const SizedBox(height: 20),
-                    FilledButton.icon(onPressed: _refreshProfile, icon: const Icon(Icons.refresh), label: const Text('Réessayer')),
-                  ],
-                ),
-              ),
-            ),
-          );
+          return Scaffold(body: Center(child: Padding(padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const Icon(Icons.cloud_off_outlined, size: 48),
+            const SizedBox(height: 16),
+            const Text('Impossible de vérifier le profil.', textAlign: TextAlign.center),
+            const SizedBox(height: 12),
+            Text('${snapshot.error}', textAlign: TextAlign.center),
+            const SizedBox(height: 20),
+            FilledButton.icon(onPressed: _refreshProfile, icon: const Icon(Icons.refresh), label: const Text('Réessayer')),
+          ])));
         }
-
         return snapshot.data == true ? const DashboardScreen() : CompleteProfileScreen(onSaved: _refreshProfile);
       },
     );
