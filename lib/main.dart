@@ -120,7 +120,9 @@ class ComptaflowApp extends StatelessWidget {
             filledButtonTheme: FilledButtonThemeData(style: FilledButton.styleFrom(backgroundColor: gold, foregroundColor: ink, minimumSize: const Size(48, 48), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)))),
             snackBarTheme: SnackBarThemeData(behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
           ),
-          home: const AuthGate(),
+          // TEMPORARY TEST MODE: bypass authentication so the product can be explored.
+          // Restore `const AuthGate()` here before the production authentication release.
+          home: const DashboardScreen(),
         ),
       ),
     );
