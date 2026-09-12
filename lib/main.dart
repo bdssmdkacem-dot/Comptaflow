@@ -18,7 +18,6 @@ Future<void> main() async {
 
   Object? initializationError;
   StackTrace? initializationStackTrace;
-
   try {
     await SupabaseClientService.initialize();
   } catch (error, stackTrace) {
@@ -35,7 +34,6 @@ Future<void> main() async {
   try {
     await localeProvider.load();
   } catch (_) {}
-
   runApp(ComptaflowApp(localeProvider: localeProvider));
 }
 
@@ -53,30 +51,7 @@ class StartupErrorApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Comptaflow',
       theme: ThemeData(useMaterial3: true, brightness: Brightness.dark, colorScheme: ColorScheme.fromSeed(seedColor: gold, brightness: Brightness.dark, surface: panel), scaffoldBackgroundColor: ink),
-      home: Scaffold(
-        body: SafeArea(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    const Icon(Icons.cloud_off_outlined, size: 56, color: gold),
-                    const SizedBox(height: 16),
-                    const Text('Comptaflow ne peut pas démarrer', textAlign: TextAlign.center, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
-                    const SizedBox(height: 12),
-                    const Text('La connexion Supabase n’a pas pu être initialisée.', textAlign: TextAlign.center),
-                    const SizedBox(height: 16),
-                    SelectableText(error.toString(), textAlign: TextAlign.center),
-                    if (stackTrace != null) ExpansionTile(title: const Text('Détails techniques'), children: [Padding(padding: const EdgeInsets.all(12), child: SelectableText(stackTrace.toString(), style: const TextStyle(fontSize: 11)))]),
-                  ]),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
+      home: Scaffold(body: SafeArea(child: Center(child: Padding(padding: const EdgeInsets.all(24), child: Card(child: Padding(padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.cloud_off_outlined, size: 56, color: gold), const SizedBox(height: 16), const Text('Comptaflow ne peut pas démarrer', textAlign: TextAlign.center, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700)), const SizedBox(height: 12), const Text('La connexion Supabase n’a pas pu être initialisée.', textAlign: TextAlign.center), const SizedBox(height: 16), SelectableText(error.toString(), textAlign: TextAlign.center), if (stackTrace != null) ExpansionTile(title: const Text('Détails techniques'), children: [Padding(padding: const EdgeInsets.all(12), child: SelectableText(stackTrace.toString(), style: const TextStyle(fontSize: 11)))])])))))),
     );
   }
 }
@@ -120,9 +95,7 @@ class ComptaflowApp extends StatelessWidget {
             filledButtonTheme: FilledButtonThemeData(style: FilledButton.styleFrom(backgroundColor: gold, foregroundColor: ink, minimumSize: const Size(48, 48), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)))),
             snackBarTheme: SnackBarThemeData(behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
           ),
-          // TEMPORARY TEST MODE: bypass authentication so the product can be explored.
-          // Restore `const AuthGate()` here before the production authentication release.
-          home: const DashboardScreen(),
+          home: const AuthGate(),
         ),
       ),
     );
@@ -131,7 +104,6 @@ class ComptaflowApp extends StatelessWidget {
 
 class AuthGate extends StatefulWidget {
   const AuthGate({super.key});
-
   @override
   State<AuthGate> createState() => _AuthGateState();
 }
@@ -141,9 +113,7 @@ class _AuthGateState extends State<AuthGate> {
   void initState() {
     super.initState();
     AuthDeepLinkService.emailConfirmed.addListener(_onEmailConfirmed);
-    if (AuthDeepLinkService.emailConfirmed.value) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _onEmailConfirmed());
-    }
+    if (AuthDeepLinkService.emailConfirmed.value) WidgetsBinding.instance.addPostFrameCallback((_) => _onEmailConfirmed());
   }
 
   @override
@@ -157,15 +127,7 @@ class _AuthGateState extends State<AuthGate> {
     AuthDeepLinkService.emailConfirmed.value = false;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      showDialog<void>(
-        context: context,
-        builder: (_) => AlertDialog(
-          icon: const Icon(Icons.verified_outlined),
-          title: const Text('تم تأكيد حسابك'),
-          content: const Text('تم تأكيد بريدك الإلكتروني بنجاح. مرحباً بك في ComptaFlow.'),
-          actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('متابعة'))],
-        ),
-      );
+      showDialog<void>(context: context, builder: (_) => AlertDialog(icon: const Icon(Icons.verified_outlined), title: const Text('تم تأكيد حسابك'), content: const Text('تم تأكيد بريدك الإلكتروني بنجاح. مرحباً بك في ComptaFlow.'), actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('متابعة'))]));
     });
   }
 
@@ -173,13 +135,23 @@ class _AuthGateState extends State<AuthGate> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     if (!auth.isAuthenticated) return const LoginScreen();
+    if (auth.user?.emailConfirmedAt == null) return const _ConfirmEmailScreen();
     return const _ProfileGate();
+  }
+}
+
+class _ConfirmEmailScreen extends StatelessWidget {
+  const _ConfirmEmailScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    final email = context.watch<AuthProvider>().user?.email ?? '';
+    return Scaffold(body: SafeArea(child: Center(child: Padding(padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.mark_email_unread_outlined, size: 64), const SizedBox(height: 20), const Text('أكد بريدك الإلكتروني', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700)), const SizedBox(height: 12), Text('تم إرسال رابط التأكيد إلى $email. افتح الرسالة واضغط على رابط التأكيد للمتابعة.', textAlign: TextAlign.center), const SizedBox(height: 20), FilledButton(onPressed: () => context.read<AuthProvider>().signOut(), child: const Text('تسجيل الخروج'))]))));
   }
 }
 
 class _ProfileGate extends StatefulWidget {
   const _ProfileGate();
-
   @override
   State<_ProfileGate> createState() => _ProfileGateState();
 }
@@ -190,17 +162,37 @@ class _ProfileGateState extends State<_ProfileGate> {
   @override
   void initState() {
     super.initState();
-    _future = _hasProfile();
+    _future = _ensureProfile();
   }
 
-  Future<bool> _hasProfile() async {
+  Future<bool> _ensureProfile() async {
     final user = SupabaseClientService.client.auth.currentUser;
     if (user == null) return false;
     final row = await SupabaseClientService.client.from('profiles').select('user_id').eq('user_id', user.id).maybeSingle();
-    return row != null;
+    if (row != null) return true;
+
+    final metadata = user.userMetadata ?? const <String, dynamic>{};
+    final requiredKeys = ['full_name', 'company_name', 'rc', 'if_number', 'ice', 'legal_form', 'address', 'city', 'professional_phone'];
+    if (requiredKeys.any((key) => (metadata[key]?.toString().trim() ?? '').isEmpty)) return false;
+
+    await SupabaseClientService.client.from('profiles').insert({
+      'user_id': user.id,
+      'full_name': metadata['full_name'],
+      'company_name': metadata['company_name'],
+      'rc': metadata['rc'],
+      'if_number': metadata['if_number'],
+      'ice': metadata['ice'],
+      'legal_form': metadata['legal_form'],
+      'address': metadata['address'],
+      'city': metadata['city'],
+      'professional_phone': metadata['professional_phone'],
+      'activity_type': 'services',
+      'locale_pref': Localizations.localeOf(context).languageCode,
+    });
+    return true;
   }
 
-  void _refreshProfile() => setState(() => _future = _hasProfile());
+  void _refreshProfile() => setState(() => _future = _ensureProfile());
 
   @override
   Widget build(BuildContext context) {
@@ -208,27 +200,7 @@ class _ProfileGateState extends State<_ProfileGate> {
       future: _future,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) return const Scaffold(body: Center(child: CircularProgressIndicator()));
-        if (snapshot.hasError) {
-          return Scaffold(
-            body: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.cloud_off_outlined, size: 48),
-                    const SizedBox(height: 16),
-                    const Text('Impossible de vérifier le profil.', textAlign: TextAlign.center),
-                    const SizedBox(height: 12),
-                    Text('${snapshot.error}', textAlign: TextAlign.center),
-                    const SizedBox(height: 20),
-                    FilledButton.icon(onPressed: _refreshProfile, icon: const Icon(Icons.refresh), label: const Text('Réessayer')),
-                  ],
-                ),
-              ),
-            ),
-          );
-        }
+        if (snapshot.hasError) return Scaffold(body: Center(child: Padding(padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [const Text('Impossible de finaliser le profil.', textAlign: TextAlign.center), const SizedBox(height: 16), Text('${snapshot.error}', textAlign: TextAlign.center), const SizedBox(height: 20), FilledButton.icon(onPressed: _refreshProfile, icon: const Icon(Icons.refresh), label: const Text('Réessayer'))])));
         return snapshot.data == true ? const DashboardScreen() : CompleteProfileScreen(onSaved: _refreshProfile);
       },
     );
