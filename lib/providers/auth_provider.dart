@@ -41,13 +41,29 @@ class AuthProvider extends ChangeNotifier {
   Future<void> signUp({
     required String email,
     required String password,
-    String? fullName,
+    required String fullName,
+    required String companyName,
+    required String rc,
+    required String ifNumber,
+    required String ice,
+    required String legalForm,
+    required String address,
+    required String city,
+    required String professionalPhone,
   }) async {
     await _run(
       () => _repository.signUpWithPassword(
         email: email,
         password: password,
         fullName: fullName,
+        companyName: companyName,
+        rc: rc,
+        ifNumber: ifNumber,
+        ice: ice,
+        legalForm: legalForm,
+        address: address,
+        city: city,
+        professionalPhone: professionalPhone,
       ),
     );
   }
