@@ -207,15 +207,25 @@ class _ProfileGateState extends State<_ProfileGate> {
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) return const Scaffold(body: Center(child: CircularProgressIndicator()));
         if (snapshot.hasError) {
-          return Scaffold(body: Center(child: Padding(padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Icon(Icons.cloud_off_outlined, size: 48),
-            const SizedBox(height: 16),
-            const Text('Impossible de vérifier le profil.', textAlign: TextAlign.center),
-            const SizedBox(height: 12),
-            Text('${snapshot.error}', textAlign: TextAlign.center),
-            const SizedBox(height: 20),
-            FilledButton.icon(onPressed: _refreshProfile, icon: const Icon(Icons.refresh), label: const Text('Réessayer')),
-          ])));
+          return Scaffold(
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.cloud_off_outlined, size: 48),
+                    const SizedBox(height: 16),
+                    const Text('Impossible de vérifier le profil.', textAlign: TextAlign.center),
+                    const SizedBox(height: 12),
+                    Text('${snapshot.error}', textAlign: TextAlign.center),
+                    const SizedBox(height: 20),
+                    FilledButton.icon(onPressed: _refreshProfile, icon: const Icon(Icons.refresh), label: const Text('Réessayer')),
+                  ],
+                ),
+              ),
+            ),
+          );
         }
         return snapshot.data == true ? const DashboardScreen() : CompleteProfileScreen(onSaved: _refreshProfile);
       },
