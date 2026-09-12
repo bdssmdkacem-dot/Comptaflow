@@ -13,6 +13,8 @@ env:
 jobs:
   analyze-and-test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -23,8 +25,31 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Create Android platform
-        run: flutter create --platforms=android --project-name comptaflow .
+      - name: Create Android platform when missing
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -d android ]; then
+            flutter create --platforms=android --project-name comptaflow .
+            echo "ANDROID_CREATED=true" >> "$GITHUB_ENV"
+          else
+            echo "ANDROID_CREATED=false" >> "$GITHUB_ENV"
+          fi
+
+      - name: Persist Android platform in main
+        if: env.ANDROID_CREATED == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add android
+          if git diff --cached --quiet; then
+            echo "No Android platform changes to commit."
+          else
+            git commit -m "build(android): commit generated Android platform [skip ci]"
+            git push origin HEAD:main
+          fi
 
       - name: Remove generated placeholder test
         run: rm -f test/widget_test.dart
