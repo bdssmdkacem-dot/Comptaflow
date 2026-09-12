@@ -9,14 +9,14 @@ class AuthRepository {
   Session? get currentSession => _client.auth.currentSession;
   User? get currentUser => _client.auth.currentUser;
 
-  Future<void> sendPhoneOtp(String phone) async {
-    await _client.auth.signInWithOtp(phone: phone);
+  Future<void> sendEmailOtp(String email) async {
+    await _client.auth.signInWithOtp(email: email);
   }
 
-  Future<void> verifyPhoneOtp(String phone, String token) async {
+  Future<void> verifyEmailOtp(String email, String token) async {
     await _client.auth.verifyOTP(
-      type: OtpType.sms,
-      phone: phone,
+      type: OtpType.email,
+      email: email,
       token: token,
     );
   }
