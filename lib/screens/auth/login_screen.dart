@@ -13,22 +13,29 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _phone = TextEditingController(text: '+212');
+  final _email = TextEditingController();
 
   @override
   void dispose() {
-    _phone.dispose();
+    _email.dispose();
     super.dispose();
   }
 
   Future<void> _sendOtp() async {
-    final phone = _phone.text.trim();
-    if (phone.length < 8) return;
+    final email = _email.text.trim();
+    final emailValid = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email);
+    if (!emailValid) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Veuillez saisir une adresse e-mail valide.')),
+      );
+      return;
+    }
+
     try {
-      await context.read<AuthProvider>().sendOtp(phone);
+      await context.read<AuthProvider>().sendOtp(email);
       if (!mounted) return;
       Navigator.of(context).push(MaterialPageRoute(
-        builder: (_) => OtpVerifyScreen(phone: phone),
+        builder: (_) => OtpVerifyScreen(email: email),
       ));
     } catch (e) {
       if (!mounted) return;
@@ -53,7 +60,16 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 12),
                   Text(l10n.welcome, style: Theme.of(context).textTheme.headlineSmall),
                   const SizedBox(height: 32),
-                  TextField(controller: _phone, keyboardType: TextInputType.phone, decoration: InputDecoration(labelText: l10n.phone, prefixIcon: const Icon(Icons.phone_outlined))),
+                  TextField(
+                    controller: _email,
+                    keyboardType: TextInputType.emailAddress,
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => _sendOtp(),
+                    decoration: InputDecoration(
+                      labelText: l10n.email,
+                      prefixIcon: const Icon(Icons.email_outlined),
+                    ),
+                  ),
                   const SizedBox(height: 20),
                   FilledButton(onPressed: _sendOtp, child: Text(l10n.sendOtp)),
                 ],
