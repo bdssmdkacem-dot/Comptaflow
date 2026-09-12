@@ -14,10 +14,125 @@ import 'screens/dashboard/dashboard_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await SupabaseClientService.initialize();
+
+  Object? initializationError;
+  StackTrace? initializationStackTrace;
+
+  try {
+    await SupabaseClientService.initialize();
+  } catch (error, stackTrace) {
+    initializationError = error;
+    initializationStackTrace = stackTrace;
+  }
+
+  if (initializationError != null) {
+    runApp(
+      StartupErrorApp(
+        error: initializationError!,
+        stackTrace: initializationStackTrace,
+      ),
+    );
+    return;
+  }
+
   final localeProvider = LocaleProvider();
-  await localeProvider.load();
+  try {
+    await localeProvider.load();
+  } catch (_) {
+    // Keep the default locale if persisted preferences cannot be loaded.
+  }
+
   runApp(ComptaflowApp(localeProvider: localeProvider));
+}
+
+class StartupErrorApp extends StatelessWidget {
+  const StartupErrorApp({super.key, required this.error, this.stackTrace});
+
+  final Object error;
+  final StackTrace? stackTrace;
+
+  @override
+  Widget build(BuildContext context) {
+    const gold = Color(0xFFD4A84F);
+    const ink = Color(0xFF050505);
+    const panel = Color(0xFF101010);
+
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Comptaflow',
+      theme: ThemeData(
+        useMaterial3: true,
+        brightness: Brightness.dark,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: gold,
+          brightness: Brightness.dark,
+          surface: panel,
+        ),
+        scaffoldBackgroundColor: ink,
+      ),
+      home: Scaffold(
+        body: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 560),
+                child: Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.cloud_off_outlined,
+                          size: 56,
+                          color: gold,
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Comptaflow ne peut pas démarrer',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'La connexion Supabase n’a pas pu être initialisée. Vérifiez la configuration de l’application puis relancez-la.',
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        SelectableText(
+                          error.toString(),
+                          textAlign: TextAlign.center,
+                        ),
+                        if (stackTrace != null) ...[
+                          const SizedBox(height: 16),
+                          ExpansionTile(
+                            title: const Text('Détails techniques'),
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: SelectableText(
+                                  stackTrace.toString(),
+                                  style: const TextStyle(fontSize: 11),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class ComptaflowApp extends StatelessWidget {
@@ -66,7 +181,7 @@ class ComptaflowApp extends StatelessWidget {
             navigationBarTheme: NavigationBarThemeData(
               backgroundColor: panel,
               indicatorColor: gold.withValues(alpha: 0.22),
-              labelTextStyle: WidgetStatePropertyAll(
+              labelTextStyle: const WidgetStatePropertyAll(
                 TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
