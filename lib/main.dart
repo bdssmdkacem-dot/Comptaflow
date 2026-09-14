@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 
 import 'core/services/auth_deep_link_service.dart';
 import 'core/services/supabase_client.dart';
+import 'core/theme/app_colors.dart';
+import 'core/theme/app_theme.dart';
 import 'data/repositories/auth_repo.dart';
 import 'data/repositories/invoice_repo.dart';
 import 'l10n/app_localizations.dart';
@@ -51,23 +53,10 @@ class StartupErrorApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const gold = Color(0xFFD4A84F);
-    const ink = Color(0xFF050505);
-    const panel = Color(0xFF101010);
-
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Comptaflow',
-      theme: ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.dark,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: gold,
-          brightness: Brightness.dark,
-          surface: panel,
-        ),
-        scaffoldBackgroundColor: ink,
-      ),
+      title: 'ComptaFlow',
+      theme: AppTheme.dark(),
       home: Scaffold(
         body: SafeArea(
           child: Center(
@@ -79,10 +68,10 @@ class StartupErrorApp extends StatelessWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.cloud_off_outlined, size: 56, color: gold),
+                      const Icon(Icons.cloud_off_outlined, size: 56, color: AppColors.accent),
                       const SizedBox(height: 16),
                       const Text(
-                        'Comptaflow ne peut pas démarrer',
+                        'ComptaFlow ne peut pas démarrer',
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
                       ),
@@ -125,16 +114,6 @@ class ComptaflowApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const gold = Color(0xFFD4A84F);
-    const ink = Color(0xFF050505);
-    const panel = Color(0xFF101010);
-    const panelElevated = Color(0xFF171717);
-    final colorScheme = ColorScheme.fromSeed(
-      seedColor: gold,
-      brightness: Brightness.dark,
-      surface: panel,
-    );
-
     return MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: localeProvider),
@@ -144,68 +123,11 @@ class ComptaflowApp extends StatelessWidget {
       child: Consumer<LocaleProvider>(
         builder: (context, locale, _) => MaterialApp(
           debugShowCheckedModeBanner: false,
-          title: 'Comptaflow',
+          title: 'ComptaFlow',
           locale: locale.locale,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          theme: ThemeData(
-            useMaterial3: true,
-            brightness: Brightness.dark,
-            colorScheme: colorScheme,
-            scaffoldBackgroundColor: ink,
-            canvasColor: ink,
-            cardColor: panel,
-            appBarTheme: const AppBarTheme(
-              backgroundColor: ink,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              centerTitle: false,
-            ),
-            navigationBarTheme: NavigationBarThemeData(
-              backgroundColor: panel,
-              indicatorColor: gold.withValues(alpha: 0.22),
-              labelTextStyle: const WidgetStatePropertyAll(
-                TextStyle(fontWeight: FontWeight.w600),
-              ),
-            ),
-            cardTheme: CardThemeData(
-              color: panel,
-              elevation: 0,
-              margin: const EdgeInsets.symmetric(vertical: 6),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: Colors.white.withValues(alpha: 0.07)),
-              ),
-            ),
-            inputDecorationTheme: InputDecorationTheme(
-              filled: true,
-              fillColor: panelElevated,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: gold, width: 1.4),
-              ),
-            ),
-            filledButtonTheme: FilledButtonThemeData(
-              style: FilledButton.styleFrom(
-                backgroundColor: gold,
-                foregroundColor: ink,
-                minimumSize: const Size(48, 48),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-            snackBarTheme: SnackBarThemeData(
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-          ),
+          theme: AppTheme.dark(),
           home: const AuthGate(),
         ),
       ),
