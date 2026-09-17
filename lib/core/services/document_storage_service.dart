@@ -22,6 +22,16 @@ class DocumentStorageService {
       throw ArgumentError.value(bytes.length, 'bytes', 'PDF exceeds 10 MB limit');
     }
 
+    final ownedInvoice = await _client
+        .from('invoices')
+        .select('id')
+        .eq('id', invoiceId)
+        .eq('user_id', user.id)
+        .maybeSingle();
+    if (ownedInvoice == null) {
+      throw StateError('Invoice not found or not owned by current user');
+    }
+
     final path = '${user.id}/invoices/$invoiceId.pdf';
     await _client.storage.from(bucket).uploadBinary(
           path,
