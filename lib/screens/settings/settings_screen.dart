@@ -42,7 +42,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final saved = await showDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(
-          title: const Text('Identité de facturation'),
+          title: const Text(l10n.billingIdentity),
           content: SizedBox(
             width: 620,
             child: Form(
@@ -50,26 +50,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: SingleChildScrollView(
                 child: Column(
                   children: [
-                    TextFormField(controller: companyName, decoration: const InputDecoration(labelText: 'Nom / raison sociale')),
-                    TextFormField(controller: fullName, decoration: const InputDecoration(labelText: 'Nom du responsable'), validator: (v) => v == null || v.trim().isEmpty ? 'Nom requis' : null),
+                    TextFormField(controller: companyName, decoration: const InputDecoration(labelText: l10n.companyName)),
+                    TextFormField(controller: fullName, decoration: const InputDecoration(labelText: l10n.responsibleName), validator: (v) => v == null || v.trim().isEmpty ? 'Nom requis' : null),
                     const SizedBox(height: 8),
-                    TextFormField(controller: ice, decoration: const InputDecoration(labelText: 'ICE')),
-                    TextFormField(controller: ifNumber, decoration: const InputDecoration(labelText: 'IF — Identifiant fiscal')),
-                    TextFormField(controller: rc, decoration: const InputDecoration(labelText: 'RC — Registre de commerce')),
+                    TextFormField(controller: ice, decoration: const InputDecoration(labelText: l10n.iceLabel)),
+                    TextFormField(controller: ifNumber, decoration: const InputDecoration(labelText: l10n.ifLabel)),
+                    TextFormField(controller: rc, decoration: const InputDecoration(labelText: l10n.rcLabel)),
                     TextFormField(controller: tp, decoration: const InputDecoration(labelText: 'TP — Taxe professionnelle')),
                     const Divider(height: 24),
-                    TextFormField(controller: address, decoration: const InputDecoration(labelText: 'Adresse')),
-                    TextFormField(controller: city, decoration: const InputDecoration(labelText: 'Ville')),
-                    TextFormField(controller: phone, decoration: const InputDecoration(labelText: 'Téléphone')),
-                    TextFormField(controller: email, keyboardType: TextInputType.emailAddress, decoration: const InputDecoration(labelText: 'Email professionnel')),
-                    TextFormField(controller: paymentTerms, decoration: const InputDecoration(labelText: 'Conditions de paiement', hintText: 'Ex. Paiement à 30 jours')),
+                    TextFormField(controller: address, decoration: const InputDecoration(labelText: l10n.address)),
+                    TextFormField(controller: city, decoration: const InputDecoration(labelText: l10n.city)),
+                    TextFormField(controller: phone, decoration: const InputDecoration(labelText: l10n.phone)),
+                    TextFormField(controller: email, keyboardType: TextInputType.emailAddress, decoration: const InputDecoration(labelText: l10n.email)),
+                    TextFormField(controller: paymentTerms, decoration: const InputDecoration(labelText: l10n.paymentTerms, hintText: l10n.paymentTermsHint)),
                   ],
                 ),
               ),
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Annuler')),
+            TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text(l10n.cancel)),
             FilledButton(
               onPressed: () async {
                 if (!formKey.currentState!.validate()) return;
@@ -89,10 +89,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   );
                   if (dialogContext.mounted) Navigator.pop(dialogContext, true);
                 } catch (error) {
-                  if (dialogContext.mounted) ScaffoldMessenger.of(dialogContext).showSnackBar(SnackBar(content: Text('Erreur : $error')));
+                  if (dialogContext.mounted) ScaffoldMessenger.of(dialogContext).showSnackBar(SnackBar(content: Text('${l10n.errorPrefix} : $error')));
                 }
               },
-              child: const Text('Enregistrer'),
+              child: const Text(l10n.saveChanges),
             ),
           ],
         ),
@@ -131,8 +131,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             return Card(
               child: ListTile(
                 leading: const Icon(Icons.business_outlined),
-                title: const Text('Identité de facturation'),
-                subtitle: Text(profile?.companyName?.isNotEmpty == true ? profile!.companyName! : 'ICE • IF • RC • TP • Conditions de paiement'),
+                title: const Text(l10n.billingIdentity),
+                subtitle: Text(profile?.companyName?.isNotEmpty == true ? profile!.companyName! : l10n.legalInfoHint),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => _editCompanyProfile(profile),
               ),
@@ -143,7 +143,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         const Card(
           child: Padding(
             padding: EdgeInsets.all(16),
-            child: Text('Ces informations seront figées sur la facture lors de son passage de brouillon à émise. Le PDF n’est qu’une représentation de ces données.'),
+            child: Text(l10n.billingFrozenNote),
           ),
         ),
         const SizedBox(height: 8),
