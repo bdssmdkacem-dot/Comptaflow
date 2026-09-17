@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:printing/printing.dart';
 
+import '../../core/services/document_storage_service.dart';
 import '../../core/services/invoice_pdf_service.dart';
 import '../../data/models/client.dart';
 import '../../data/models/invoice.dart';
@@ -48,6 +49,7 @@ class _InvoiceDraftLine {
 class _InvoicesScreenState extends State<InvoicesScreen> {
   final _repository = InvoiceRepository();
   final _pdfService = const InvoicePdfService();
+  final _storageService = const DocumentStorageService();
   late Future<List<InvoiceModel>> _future;
 
   @override
@@ -107,6 +109,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
           onPreview: () => _previewPdf(invoice, details),
           onShare: () => _sharePdf(invoice, details),
           onPrint: () => _printPdf(invoice, details),
+          onSavePdf: () => _savePdf(invoice, details),
         ),
       );
     } catch (error) {
@@ -179,6 +182,19 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
       await Printing.sharePdf(bytes: bytes, filename: '${invoice.invoiceNumber}.pdf');
     } catch (error) {
       if (mounted) _showError('Erreur PDF : $error');
+    }
+  }
+
+  Future<void> _savePdf(InvoiceModel invoice, InvoiceDetails details) async {
+    try {
+      final bytes = await _pdfService.build(invoice: invoice, details: details);
+      final path = await _storageService.uploadInvoicePdf(invoiceId: invoice.id, bytes: bytes);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('PDF enregistré de façon sécurisée.\n$path')),
+      );
+    } catch (error) {
+      if (mounted) _showError('Impossible d’enregistrer le PDF : $error');
     }
   }
 
@@ -431,6 +447,7 @@ class _InvoiceDetailsSheet extends StatelessWidget {
     required this.onPreview,
     required this.onShare,
     required this.onPrint,
+    required this.onSavePdf,
   });
 
   final InvoiceModel invoice;
@@ -441,6 +458,7 @@ class _InvoiceDetailsSheet extends StatelessWidget {
   final VoidCallback onPreview;
   final VoidCallback onShare;
   final VoidCallback onPrint;
+  final VoidCallback onSavePdf;
 
   @override
   Widget build(BuildContext context) {
@@ -470,6 +488,7 @@ class _InvoiceDetailsSheet extends StatelessWidget {
               OutlinedButton.icon(onPressed: onPreview, icon: const Icon(Icons.picture_as_pdf_outlined), label: const Text('Aperçu PDF')),
               OutlinedButton.icon(onPressed: onShare, icon: const Icon(Icons.share_outlined), label: const Text('Partager PDF')),
               OutlinedButton.icon(onPressed: onPrint, icon: const Icon(Icons.print_outlined), label: const Text('Imprimer')),
+              OutlinedButton.icon(onPressed: onSavePdf, icon: const Icon(Icons.cloud_upload_outlined), label: const Text('Enregistrer le PDF')),
             ],
           ),
         ),
