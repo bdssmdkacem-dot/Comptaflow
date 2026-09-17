@@ -24,5 +24,43 @@
   "arabic": "العربية",
   "french": "Français",
   "welcomeDashboard": "مرحباً بك في كومبتافلو",
-  "configurationRequired": "يرجى إعداد حسابك للبدء"
+  "configurationRequired": "يرجى إعداد حسابك للبدء",
+  "signUpTitle": "إنشاء حساب مهني",
+  "companyInfo": "معلومات الشركة",
+  "companyName": "الاسم / الشركة",
+  "responsibleName": "اسم المسؤول",
+  "rcLabel": "RC — السجل التجاري",
+  "ifLabel": "IF — التعريف الضريبي",
+  "iceLabel": "ICE — التعريف الموحد للمقاولة",
+  "legalForm": "الشكل القانوني",
+  "address": "العنوان المهني",
+  "city": "المدينة",
+  "professionalPhone": "الهاتف المهني",
+  "password": "كلمة المرور",
+  "confirmPassword": "تأكيد كلمة المرور",
+  "createAccount": "إنشاء الحساب",
+  "alreadyAccount": "لدي حساب بالفعل",
+  "newAccount": "إنشاء حساب جديد",
+  "verifyEmailTitle": "تحقق من بريدك الإلكتروني",
+  "verifyEmailMessage": "تم إنشاء حسابك المهني. أرسلنا رسالة تأكيد إلى {email}. أكد بريدك الإلكتروني لتفعيل مساحة ComptaFlow.",
+  "@verifyEmailMessage": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "ok": "حسنًا",
+  "billingIdentity": "هوية الفوترة",
+  "legalInfoHint": "ICE • IF • RC • TP • شروط الدفع",
+  "paymentTerms": "شروط الدفع",
+  "paymentTermsHint": "مثال: الدفع خلال 30 يومًا",
+  "cancel": "إلغاء",
+  "saveChanges": "حفظ",
+  "billingFrozenNote": "ستُثبت هذه المعلومات على الفاتورة عند تحويلها من مسودة إلى صادرة. ملف PDF مجرد تمثيل لهذه البيانات.",
+  "requiredField": "هذا الحقل مطلوب",
+  "invalidEmail": "بريد إلكتروني غير صالح",
+  "passwordMin": "يجب أن تتكون كلمة المرور من 8 أحرف على الأقل",
+  "passwordMismatch": "كلمتا المرور غير متطابقتين",
+  "errorPrefix": "خطأ"
 }
