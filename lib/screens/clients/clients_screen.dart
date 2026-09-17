@@ -150,9 +150,9 @@ class _ClientsScreenState extends State<ClientsScreen> {
                           onTap: () => detail(c),
                           trailing: PopupMenuButton<String>(
                             onSelected: (v) => v == 'edit' ? edit(c) : remove(c),
-                            itemBuilder: (_) => const [
-                              PopupMenuItem(value: 'edit', child: Text(AppLocalizations.of(context).edit)),
-                              PopupMenuItem(value: 'delete', child: Text(AppLocalizations.of(context).delete)),
+                            itemBuilder: (_) => [
+                              PopupMenuItem(value: 'edit', child: Text(l10n.edit)),
+                              PopupMenuItem(value: 'delete', child: Text(l10n.delete)),
                             ],
                           ),
                         ),
