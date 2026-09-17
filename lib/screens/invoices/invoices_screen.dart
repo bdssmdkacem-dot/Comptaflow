@@ -153,7 +153,11 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
 
   Future<void> _previewPdf(InvoiceModel invoice, InvoiceDetails details) async {
     try {
-      final bytes = await _pdfService.build(invoice: invoice, details: details);
+      final bytes = await _pdfService.build(
+        invoice: invoice,
+        details: details,
+        languageCode: Localizations.localeOf(context).languageCode,
+      );
       if (!mounted) return;
       await showDialog<void>(
         context: context,
@@ -178,7 +182,11 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
 
   Future<void> _sharePdf(InvoiceModel invoice, InvoiceDetails details) async {
     try {
-      final bytes = await _pdfService.build(invoice: invoice, details: details);
+      final bytes = await _pdfService.build(
+        invoice: invoice,
+        details: details,
+        languageCode: Localizations.localeOf(context).languageCode,
+      );
       await Printing.sharePdf(bytes: bytes, filename: '${invoice.invoiceNumber}.pdf');
     } catch (error) {
       if (mounted) _showError('Erreur PDF : $error');
@@ -187,7 +195,11 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
 
   Future<void> _savePdf(InvoiceModel invoice, InvoiceDetails details) async {
     try {
-      final bytes = await _pdfService.build(invoice: invoice, details: details);
+      final bytes = await _pdfService.build(
+        invoice: invoice,
+        details: details,
+        languageCode: Localizations.localeOf(context).languageCode,
+      );
       final path = await _storageService.uploadInvoicePdf(invoiceId: invoice.id, bytes: bytes);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -200,7 +212,11 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
 
   Future<void> _printPdf(InvoiceModel invoice, InvoiceDetails details) async {
     try {
-      final bytes = await _pdfService.build(invoice: invoice, details: details);
+      final bytes = await _pdfService.build(
+        invoice: invoice,
+        details: details,
+        languageCode: Localizations.localeOf(context).languageCode,
+      );
       await Printing.layoutPdf(onLayout: (_) async => bytes);
     } catch (error) {
       if (mounted) _showError('Erreur impression : $error');
