@@ -66,7 +66,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
       final result = await _invoiceDialog(clients: clients, products: products);
       if (result == true && mounted) setState(() => _future = _repository.list());
     } catch (error) {
-      if (mounted) _showError('Erreur : $error');
+      if (mounted) _showError('${AppLocalizations.of(context).errorPrefix} : $error');
     }
   }
 
@@ -85,7 +85,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
       );
       if (result == true && mounted) setState(() => _future = _repository.list());
     } catch (error) {
-      if (mounted) _showError('Erreur : $error');
+      if (mounted) _showError('${AppLocalizations.of(context).errorPrefix} : $error');
     }
   }
 
@@ -113,7 +113,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
         ),
       );
     } catch (error) {
-      if (mounted) _showError('Erreur : $error');
+      if (mounted) _showError('${AppLocalizations.of(context).errorPrefix} : $error');
     }
   }
 
@@ -124,7 +124,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
       Navigator.of(context).pop();
       setState(() => _future = _repository.list());
     } catch (error) {
-      if (mounted) _showError('Impossible d’émettre la facture : $error');
+      if (mounted) _showError('${AppLocalizations.of(context).issueInvoiceError} : $error');
     }
   }
 
@@ -132,11 +132,11 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Supprimer la facture ?'),
-        content: Text('La facture ${invoice.invoiceNumber} sera supprimée définitivement.'),
+        title: Text(AppLocalizations.of(context).deleteInvoiceTitle),
+        content: Text(AppLocalizations.of(context).deleteInvoiceMessage(invoice.invoiceNumber)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Annuler')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Supprimer')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(AppLocalizations.of(context).cancel)),
+          FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(AppLocalizations.of(context).delete)),
         ],
       ),
     );
@@ -147,7 +147,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
       Navigator.of(context).pop();
       setState(() => _future = _repository.list());
     } catch (error) {
-      if (mounted) _showError('Impossible de supprimer la facture : $error');
+      if (mounted) _showError('${AppLocalizations.of(context).deleteInvoiceError} : $error');
     }
   }
 
@@ -176,7 +176,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
         ),
       );
     } catch (error) {
-      if (mounted) _showError('Erreur PDF : $error');
+      if (mounted) _showError('${AppLocalizations.of(context).pdfError} : $error');
     }
   }
 
@@ -189,7 +189,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
       );
       await Printing.sharePdf(bytes: bytes, filename: '${invoice.invoiceNumber}.pdf');
     } catch (error) {
-      if (mounted) _showError('Erreur PDF : $error');
+      if (mounted) _showError('${AppLocalizations.of(context).pdfError} : $error');
     }
   }
 
@@ -203,10 +203,10 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
       final path = await _storageService.uploadInvoicePdf(invoiceId: invoice.id, bytes: bytes);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('PDF enregistré de façon sécurisée.\n$path')),
+        SnackBar(content: Text(AppLocalizations.of(context).savePdfSecure(path))),
       );
     } catch (error) {
-      if (mounted) _showError('Impossible d’enregistrer le PDF : $error');
+      if (mounted) _showError('${AppLocalizations.of(context).savePdfError} : $error');
     }
   }
 
@@ -219,7 +219,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
       );
       await Printing.layoutPdf(onLayout: (_) async => bytes);
     } catch (error) {
-      if (mounted) _showError('Erreur impression : $error');
+      if (mounted) _showError('${AppLocalizations.of(context).printError} : $error');
     }
   }
 
@@ -256,7 +256,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
             double totalTva() => lines.fold(0, (sum, line) => sum + line.tva);
 
             return AlertDialog(
-              title: Text(editing ? 'Modifier la facture' : 'Nouvelle facture'),
+              title: Text(editing ? AppLocalizations.of(context).editInvoice : AppLocalizations.of(context).newInvoice),
               content: SizedBox(
                 width: 900,
                 child: SingleChildScrollView(
@@ -267,8 +267,8 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                         controller: number,
                         readOnly: editing,
                         decoration: InputDecoration(
-                          labelText: 'N° facture',
-                          hintText: editing ? null : 'Laisser vide pour numérotation automatique',
+                          labelText: AppLocalizations.of(context).invoiceNumber,
+                          hintText: editing ? null : AppLocalizations.of(context).autoInvoiceNumber,
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -276,7 +276,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                         valueListenable: selectedClientId,
                         builder: (context, value, _) => DropdownButtonFormField<String>(
                           initialValue: value,
-                          decoration: const InputDecoration(labelText: 'Client'),
+                          decoration: const InputDecoration(labelText: AppLocalizations.of(context).client),
                           items: clients
                               .map((client) => DropdownMenuItem(value: client.id, child: Text(client.name)))
                               .toList(),
@@ -294,7 +294,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                               children: [
                                 Row(
                                   children: [
-                                    Expanded(child: Text('Ligne ${index + 1}', style: const TextStyle(fontWeight: FontWeight.bold))),
+                                    Expanded(child: Text(AppLocalizations.of(context).line(index + 1), style: const TextStyle(fontWeight: FontWeight.bold))),
                                     if (lines.length > 1)
                                       IconButton(
                                         onPressed: () {
@@ -307,7 +307,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                                 ),
                                 DropdownButtonFormField<ProductModel>(
                                   initialValue: line.product,
-                                  decoration: const InputDecoration(labelText: 'Produit / service'),
+                                  decoration: const InputDecoration(labelText: AppLocalizations.of(context).productService),
                                   items: products
                                       .map((product) => DropdownMenuItem(value: product, child: Text(product.name)))
                                       .toList(),
@@ -318,15 +318,15 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                                 ),
                                 TextField(
                                   controller: line.description,
-                                  decoration: const InputDecoration(labelText: 'Description'),
+                                  decoration: const InputDecoration(labelText: AppLocalizations.of(context).description),
                                 ),
                                 Row(
                                   children: [
-                                    Expanded(child: TextField(controller: line.quantity, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Qté'))),
+                                    Expanded(child: TextField(controller: line.quantity, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: AppLocalizations.of(context).quantityShort))),
                                     const SizedBox(width: 8),
-                                    Expanded(child: TextField(controller: line.price, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Prix HT'))),
+                                    Expanded(child: TextField(controller: line.price, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: AppLocalizations.of(context).unitPriceHt))),
                                     const SizedBox(width: 8),
-                                    Expanded(child: TextField(controller: line.tax, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'TVA %'))),
+                                    Expanded(child: TextField(controller: line.tax, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: AppLocalizations.of(context).taxPercent))),
                                   ],
                                 ),
                               ],
@@ -337,23 +337,23 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                       TextButton.icon(
                         onPressed: () => setDialogState(() => lines.add(_InvoiceDraftLine())),
                         icon: const Icon(Icons.add),
-                        label: const Text('Ajouter une ligne'),
+                        label: Text(AppLocalizations.of(context).addLine),
                       ),
                       const Divider(),
-                      Text('Total HT : ${totalHt().toStringAsFixed(2)} MAD'),
-                      Text('TVA : ${totalTva().toStringAsFixed(2)} MAD'),
-                      Text('Total TTC : ${(totalHt() + totalTva()).toStringAsFixed(2)} MAD', style: const TextStyle(fontWeight: FontWeight.bold)),
+                      Text('${AppLocalizations.of(context).totalHt} : ${totalHt().toStringAsFixed(2)} MAD'),
+                      Text('${AppLocalizations.of(context).totalTva} : ${totalTva().toStringAsFixed(2)} MAD'),
+                      Text('${AppLocalizations.of(context).totalTtc} : ${(totalHt() + totalTva()).toStringAsFixed(2)} MAD', style: const TextStyle(fontWeight: FontWeight.bold)),
                     ],
                   ),
                 ),
               ),
               actions: [
-                TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Annuler')),
+                TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(AppLocalizations.of(context).cancel)),
                 FilledButton(
                   onPressed: () async {
                     try {
                       final clientId = selectedClientId.value;
-                      if (clientId == null) throw Exception('Sélectionnez un client.');
+                      if (clientId == null) throw Exception(AppLocalizations.of(context).selectClient);
                       final inputs = lines
                           .map((line) => InvoiceItemInput(
                                 description: line.description.text.trim(),
@@ -363,7 +363,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                               ))
                           .toList();
                       if (inputs.any((item) => item.description.isEmpty || item.quantity <= 0 || item.unitPrice < 0 || item.taxRate < 0 || item.taxRate > 100)) {
-                        throw Exception('Vérifiez les lignes de facture.');
+                        throw Exception(AppLocalizations.of(context).checkInvoiceLines);
                       }
 
                       if (editing && currentInvoice != null) {
@@ -385,11 +385,11 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                       if (dialogContext.mounted) Navigator.pop(dialogContext, true);
                     } catch (error) {
                       if (dialogContext.mounted) {
-                        ScaffoldMessenger.of(dialogContext).showSnackBar(SnackBar(content: Text('Erreur : $error')));
+                        ScaffoldMessenger.of(dialogContext).showSnackBar(SnackBar(content: Text('${AppLocalizations.of(context).errorPrefix} : $error')));
                       }
                     }
                   },
-                  child: Text(editing ? 'Enregistrer' : 'Créer'),
+                  child: Text(editing ? AppLocalizations.of(context).save : AppLocalizations.of(context).createInvoice),
                 ),
               ],
             );
@@ -420,7 +420,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _createInvoice,
         icon: const Icon(Icons.add),
-        label: const Text('Nouvelle facture'),
+        label: const Text(AppLocalizations.of(context).newInvoice),
       ),
       body: FutureBuilder<List<InvoiceModel>>(
         future: _future,
@@ -428,7 +428,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
           if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
           if (snapshot.hasError) return Center(child: Text('Erreur : ${snapshot.error}'));
           final invoices = snapshot.data ?? [];
-          if (invoices.isEmpty) return const Center(child: Text('Aucune facture.'));
+          if (invoices.isEmpty) return const Center(child: Text(AppLocalizations.of(context).noInvoices));
           return RefreshIndicator(
             onRefresh: _refresh,
             child: ListView.builder(
@@ -452,6 +452,8 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
     );
   }
 }
+
+String _statusLabel(BuildContext context, String status) { final l10n = AppLocalizations.of(context); switch(status){case 'draft': return l10n.statusDraft; case 'issued': return l10n.statusIssued; case 'paid': return l10n.statusPaid; case 'cancelled': return l10n.statusCancelled; default: return l10n.invoiceStatusUnknown;} }
 
 class _InvoiceDetailsSheet extends StatelessWidget {
   const _InvoiceDetailsSheet({
@@ -486,7 +488,7 @@ class _InvoiceDetailsSheet extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(invoice.invoiceNumber, style: Theme.of(context).textTheme.headlineSmall),
-              Text('Statut : ${invoice.status}'),
+              Text('${AppLocalizations.of(context).status} : ${_statusLabel(context, invoice.status)}'),
               const SizedBox(height: 12),
               ...details.items.map((item) => ListTile(
                     title: Text(item.description),
@@ -494,17 +496,17 @@ class _InvoiceDetailsSheet extends StatelessWidget {
                     trailing: Text('${item.totalTtc.toStringAsFixed(2)} MAD'),
                   )),
               const Divider(),
-              Text('Total HT : ${details.totalHt.toStringAsFixed(2)} MAD'),
-              Text('TVA : ${details.totalTva.toStringAsFixed(2)} MAD'),
-              Text('Total TTC : ${details.totalTtc.toStringAsFixed(2)} MAD', style: const TextStyle(fontWeight: FontWeight.bold)),
+              Text('${AppLocalizations.of(context).totalHt} : ${details.totalHt.toStringAsFixed(2)} MAD'),
+              Text('${AppLocalizations.of(context).totalTva} : ${details.totalTva.toStringAsFixed(2)} MAD'),
+              Text('${AppLocalizations.of(context).totalTtc} : ${details.totalTtc.toStringAsFixed(2)} MAD', style: const TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
-              if (onEdit != null) FilledButton.icon(onPressed: onEdit, icon: const Icon(Icons.edit), label: const Text('Modifier la facture')),
-              if (onIssue != null) FilledButton.icon(onPressed: onIssue, icon: const Icon(Icons.check_circle_outline), label: const Text('Émettre')),
-              if (onDelete != null) OutlinedButton.icon(onPressed: onDelete, icon: const Icon(Icons.delete_outline), label: const Text('Supprimer')),
-              OutlinedButton.icon(onPressed: onPreview, icon: const Icon(Icons.picture_as_pdf_outlined), label: const Text('Aperçu PDF')),
-              OutlinedButton.icon(onPressed: onShare, icon: const Icon(Icons.share_outlined), label: const Text('Partager PDF')),
-              OutlinedButton.icon(onPressed: onPrint, icon: const Icon(Icons.print_outlined), label: const Text('Imprimer')),
-              OutlinedButton.icon(onPressed: onSavePdf, icon: const Icon(Icons.cloud_upload_outlined), label: const Text('Enregistrer le PDF')),
+              if (onEdit != null) FilledButton.icon(onPressed: onEdit, icon: const Icon(Icons.edit), label: const Text(AppLocalizations.of(context).editInvoice)),
+              if (onIssue != null) FilledButton.icon(onPressed: onIssue, icon: const Icon(Icons.check_circle_outline), label: Text(AppLocalizations.of(context).issue)),
+              if (onDelete != null) OutlinedButton.icon(onPressed: onDelete, icon: const Icon(Icons.delete_outline), label: Text(AppLocalizations.of(context).delete)),
+              OutlinedButton.icon(onPressed: onPreview, icon: const Icon(Icons.picture_as_pdf_outlined), label: Text(AppLocalizations.of(context).previewPdf)),
+              OutlinedButton.icon(onPressed: onShare, icon: const Icon(Icons.share_outlined), label: Text(AppLocalizations.of(context).sharePdf)),
+              OutlinedButton.icon(onPressed: onPrint, icon: const Icon(Icons.print_outlined), label: Text(AppLocalizations.of(context).print)),
+              OutlinedButton.icon(onPressed: onSavePdf, icon: const Icon(Icons.cloud_upload_outlined), label: Text(AppLocalizations.of(context).savePdf)),
             ],
           ),
         ),
