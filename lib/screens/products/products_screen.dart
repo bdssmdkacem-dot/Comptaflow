@@ -57,7 +57,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
               Text('${AppLocalizations.of(context).currentStock}: ${product.stockQuantity.toStringAsFixed(2)} ${product.unit}'),
               const SizedBox(height: 12),
               SegmentedButton<bool>(
-                segments: const [
+                segments: [
                   ButtonSegment(value: true, label: Text(AppLocalizations.of(context).stockEntry), icon: Icon(Icons.add)),
                   ButtonSegment(value: false, label: Text(AppLocalizations.of(context).stockExit), icon: Icon(Icons.remove)),
                 ],
