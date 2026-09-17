@@ -49,13 +49,13 @@ class _ClientsScreenState extends State<ClientsScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Supprimer le client ?'),
+        title: Text(AppLocalizations.of(context).deleteClientTitle),
         content: Text(
           'Supprimer « ${client.name} » ? Les clients liés à des factures ne peuvent pas être supprimés.',
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Annuler')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Supprimer')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(AppLocalizations.of(context).cancel)),
+          FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(AppLocalizations.of(context).delete)),
         ],
       ),
     );
@@ -81,7 +81,7 @@ class _ClientsScreenState extends State<ClientsScreen> {
             child: TextField(
               controller: search,
               decoration: InputDecoration(
-                hintText: 'Rechercher un client',
+                hintText: AppLocalizations.of(context).clientsSearchHint,
                 prefixIcon: const Icon(Icons.search_rounded),
                 suffixIcon: search.text.isEmpty
                     ? null
@@ -108,8 +108,8 @@ class _ClientsScreenState extends State<ClientsScreen> {
                 if (list.isEmpty) {
                   return _StateMessage(
                     icon: search.text.isEmpty ? Icons.people_outline_rounded : Icons.search_off_rounded,
-                    title: search.text.isEmpty ? 'Aucun client' : 'Aucun client trouvé',
-                    subtitle: search.text.isEmpty ? 'Ajoutez votre premier client pour commencer.' : 'Essayez avec un autre terme de recherche.',
+                    title: search.text.isEmpty ? AppLocalizations.of(context).noClients : AppLocalizations.of(context).noClientsFound,
+                    subtitle: search.text.isEmpty ? AppLocalizations.of(context).addFirstClient : AppLocalizations.of(context).tryAnotherSearch,
                   );
                 }
                 return RefreshIndicator(
@@ -151,8 +151,8 @@ class _ClientsScreenState extends State<ClientsScreen> {
                           trailing: PopupMenuButton<String>(
                             onSelected: (v) => v == 'edit' ? edit(c) : remove(c),
                             itemBuilder: (_) => const [
-                              PopupMenuItem(value: 'edit', child: Text('Modifier')),
-                              PopupMenuItem(value: 'delete', child: Text('Supprimer')),
+                              PopupMenuItem(value: 'edit', child: Text(AppLocalizations.of(context).edit)),
+                              PopupMenuItem(value: 'delete', child: Text(AppLocalizations.of(context).delete)),
                             ],
                           ),
                         ),
@@ -168,7 +168,7 @@ class _ClientsScreenState extends State<ClientsScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => edit(),
         icon: const Icon(Icons.person_add_alt_1_rounded),
-        label: const Text('Ajouter'),
+        label: Text(AppLocalizations.of(context).add),
       ),
     );
   }
@@ -231,7 +231,7 @@ class _ClientDialogState extends State<ClientDialog> {
     super.dispose();
   }
 
-  String? requiredName(String? v) => v == null || v.trim().isEmpty ? 'Nom requis' : null;
+  String? requiredName(String? v) => v == null || v.trim().isEmpty ? AppLocalizations.of(context).requiredField : null;
   String? validEmail(String? v) => v == null || v.trim().isEmpty || v.contains('@') ? null : 'Email invalide';
   String? val(TextEditingController c) => c.text.trim().isEmpty ? null : c.text.trim();
 
@@ -254,14 +254,14 @@ class _ClientDialogState extends State<ClientDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: Text(widget.client == null ? 'Nouveau client' : 'Modifier le client'),
+    title: Text(widget.client == null ? AppLocalizations.of(context).newClient : AppLocalizations.of(context).editClient),
     content: SizedBox(
       width: 520,
       child: SingleChildScrollView(
         child: Form(
           key: form,
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            field(name, 'Nom / raison sociale', requiredName),
+            field(name, AppLocalizations.of(context).nameOrCompany, requiredName),
             Row(children: [Expanded(child: field(ice, 'ICE')), const SizedBox(width: 8), Expanded(child: field(ifNumber, 'IF'))]),
             Row(children: [Expanded(child: field(rc, 'RC')), const SizedBox(width: 8), Expanded(child: field(tp, 'TP'))]),
             Row(children: [Expanded(child: field(phone, 'Téléphone')), const SizedBox(width: 8), Expanded(child: field(email, 'Email', validEmail))]),
@@ -271,8 +271,8 @@ class _ClientDialogState extends State<ClientDialog> {
       ),
     ),
     actions: [
-      TextButton(onPressed: saving ? null : () => Navigator.pop(context), child: const Text('Annuler')),
-      FilledButton(onPressed: saving ? null : save, child: saving ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Enregistrer')),
+      TextButton(onPressed: saving ? null : () => Navigator.pop(context), child: Text(AppLocalizations.of(context).cancel)),
+      FilledButton(onPressed: saving ? null : save, child: saving ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : Text(AppLocalizations.of(context).save)),
     ],
   );
 
