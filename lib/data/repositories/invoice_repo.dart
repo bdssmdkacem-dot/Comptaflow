@@ -63,21 +63,28 @@ class InvoiceRepository {
     if (items.isEmpty) throw ArgumentError('Invoice must contain at least one line');
     _validate(items);
     final client = SupabaseClientService.client;
-    final details = await getDetails(invoiceId);
-    if (details.invoice.status != 'draft') throw StateError('Only draft invoices can be edited');
     final normalizedClientId = clientId?.trim();
-    if (normalizedClientId != null && normalizedClientId.isNotEmpty) {
-      final user = client.auth.currentUser;
-      if (user == null) throw StateError('Authentication required');
-      final ownedClient = await client.from('clients').select('id').eq('id', normalizedClientId).eq('user_id', user.id).maybeSingle();
-      if (ownedClient == null) throw StateError('Client not found or not owned by current user');
+    if (normalizedClientId != null && normalizedClientId.isEmpty) {
+      throw ArgumentError('Client id cannot be empty; use null for no client');
     }
-    final totalHt = items.fold<double>(0, (sum, item) => sum + item.totalHt);
-    final totalTva = items.fold<double>(0, (sum, item) => sum + item.totalTva);
-    final totalTtc = totalHt + totalTva;
-    await client.from('invoices').update({'invoice_number': invoiceNumber.trim(), 'client_id': normalizedClientId?.isEmpty == true ? null : normalizedClientId, 'date': date.toIso8601String().split('T').first, 'total_ht': totalHt, 'total_tva': totalTva, 'total_ttc': totalTtc}).eq('id', invoiceId);
-    await client.from('invoice_items').delete().eq('invoice_id', invoiceId);
-    await client.from('invoice_items').insert(items.map((item) => {'invoice_id': invoiceId, 'description': item.description.trim(), 'quantity': item.quantity, 'unit_price': item.unitPrice, 'tax_rate': item.taxRate}).toList());
+
+    await client.rpc(
+      'update_draft_invoice',
+      params: {
+        'p_invoice_id': invoiceId,
+        'p_invoice_number': invoiceNumber.trim(),
+        'p_client_id': normalizedClientId,
+        'p_date': date.toIso8601String().split('T').first,
+        'p_items': items
+            .map((item) => {
+                  'description': item.description.trim(),
+                  'quantity': item.quantity,
+                  'unit_price': item.unitPrice,
+                  'tax_rate': item.taxRate,
+                })
+            .toList(),
+      },
+    );
   }
 
   Future<void> delete(String invoiceId) async {
