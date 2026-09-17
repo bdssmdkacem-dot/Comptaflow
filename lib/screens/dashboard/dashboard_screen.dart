@@ -462,20 +462,20 @@ class _PeriodSelector extends StatelessWidget {
             ),
           ),
         ),
-        segments: const [
+        segments: [
           ButtonSegment(
             value: _DashboardPeriod.month,
-            label: Text('Mois'),
+            label: Text(AppLocalizations.of(context).dashboardPeriodMonth),
             icon: Icon(Icons.calendar_month_outlined, size: 18),
           ),
           ButtonSegment(
             value: _DashboardPeriod.quarter,
-            label: Text('Trimestre'),
+            label: Text(AppLocalizations.of(context).dashboardPeriodQuarter),
             icon: Icon(Icons.date_range_outlined, size: 18),
           ),
           ButtonSegment(
             value: _DashboardPeriod.year,
-            label: Text('Année'),
+            label: Text(AppLocalizations.of(context).dashboardPeriodYear),
             icon: Icon(Icons.calendar_today_outlined, size: 18),
           ),
         ],
