@@ -24,5 +24,43 @@
   "arabic": "العربية",
   "french": "Français",
   "welcomeDashboard": "Bienvenue dans Comptaflow",
-  "configurationRequired": "Configurez votre compte pour commencer"
+  "configurationRequired": "Configurez votre compte pour commencer",
+  "signUpTitle": "Créer votre compte professionnel",
+  "companyInfo": "Informations de l’entreprise",
+  "companyName": "Nom / raison sociale",
+  "responsibleName": "Nom du responsable",
+  "rcLabel": "RC — Registre de commerce",
+  "ifLabel": "IF — Identifiant fiscal",
+  "iceLabel": "ICE — Identifiant commun de l’entreprise",
+  "legalForm": "Forme juridique",
+  "address": "Adresse professionnelle",
+  "city": "Ville",
+  "professionalPhone": "Téléphone professionnel",
+  "password": "Mot de passe",
+  "confirmPassword": "Confirmer le mot de passe",
+  "createAccount": "Créer le compte",
+  "alreadyAccount": "J’ai déjà un compte",
+  "newAccount": "Créer un nouveau compte",
+  "verifyEmailTitle": "Vérifiez votre e-mail",
+  "verifyEmailMessage": "Votre compte professionnel a été créé. Un message de confirmation a été envoyé à {email}. Confirmez votre adresse pour activer votre espace ComptaFlow.",
+  "@verifyEmailMessage": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "ok": "OK",
+  "billingIdentity": "Identité de facturation",
+  "legalInfoHint": "ICE • IF • RC • TP • Conditions de paiement",
+  "paymentTerms": "Conditions de paiement",
+  "paymentTermsHint": "Ex. Paiement à 30 jours",
+  "cancel": "Annuler",
+  "saveChanges": "Enregistrer",
+  "billingFrozenNote": "Ces informations seront figées sur la facture lors de son passage de brouillon à émise. Le PDF n’est qu’une représentation de ces données.",
+  "requiredField": "Champ requis",
+  "invalidEmail": "Adresse e-mail invalide",
+  "passwordMin": "Le mot de passe doit contenir au moins 8 caractères",
+  "passwordMismatch": "Les mots de passe ne correspondent pas",
+  "errorPrefix": "Erreur"
 }
