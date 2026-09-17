@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
+
 import '../../data/models/product.dart';
 import '../../data/repositories/product_repo.dart';
 
@@ -48,16 +50,16 @@ class _ProductsScreenState extends State<ProductsScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: Text('Stock — ${product.name}'),
+          title: Text('${AppLocalizations.of(context).stock} — ${product.name}'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Stock actuel: ${product.stockQuantity.toStringAsFixed(2)} ${product.unit}'),
+              Text('${AppLocalizations.of(context).currentStock}: ${product.stockQuantity.toStringAsFixed(2)} ${product.unit}'),
               const SizedBox(height: 12),
               SegmentedButton<bool>(
                 segments: const [
-                  ButtonSegment(value: true, label: Text('Entrée'), icon: Icon(Icons.add)),
-                  ButtonSegment(value: false, label: Text('Sortie'), icon: Icon(Icons.remove)),
+                  ButtonSegment(value: true, label: Text(AppLocalizations.of(context).stockEntry), icon: Icon(Icons.add)),
+                  ButtonSegment(value: false, label: Text(AppLocalizations.of(context).stockExit), icon: Icon(Icons.remove)),
                 ],
                 selected: {increase},
                 onSelectionChanged: (value) => setDialogState(() => increase = value.first),
@@ -65,18 +67,18 @@ class _ProductsScreenState extends State<ProductsScreen> {
               TextField(
                 controller: quantity,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(labelText: 'Quantité'),
+                decoration: InputDecoration(labelText: AppLocalizations.of(context).quantity),
               ),
               TextField(
                 controller: note,
-                decoration: const InputDecoration(labelText: 'Note (optionnel)'),
+                decoration: InputDecoration(labelText: AppLocalizations.of(context).optionalNote),
               ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Annuler'),
+              child: Text(AppLocalizations.of(context).cancel),
             ),
             FilledButton(
               onPressed: () async {
@@ -98,7 +100,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                   }
                 }
               },
-              child: const Text('Enregistrer'),
+              child: Text(AppLocalizations.of(context).save),
             ),
           ],
         ),
@@ -118,7 +120,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          title: const Text('Produits & services'),
+          title: Text(AppLocalizations.of(context).productsServices),
           actions: [
             IconButton(onPressed: _reload, icon: const Icon(Icons.refresh)),
             IconButton(
@@ -133,7 +135,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () => _openEditor(),
           icon: const Icon(Icons.add),
-          label: const Text('Ajouter'),
+          label: Text(AppLocalizations.of(context).add),
         ),
         body: Column(
           children: [
@@ -144,7 +146,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                 onChanged: (_) => setState(_load),
                 decoration: InputDecoration(
                   prefixIcon: const Icon(Icons.search),
-                  hintText: 'Nom ou référence',
+                  hintText: AppLocalizations.of(context).searchNameReference,
                   suffixIcon: _search.text.isEmpty
                       ? null
                       : IconButton(
@@ -173,8 +175,8 @@ class _ProductsScreenState extends State<ProductsScreen> {
                     return Center(
                       child: Text(
                         _showArchived
-                            ? 'Aucun produit archivé.'
-                            : 'Aucun produit ou service.',
+                            ? AppLocalizations.of(context).noArchivedProducts
+                            : AppLocalizations.of(context).noProductsServices,
                       ),
                     );
                   }
@@ -443,7 +445,7 @@ class _ProductDialogState extends State<_ProductDialog> {
         actions: [
           TextButton(
             onPressed: saving ? null : () => Navigator.pop(context),
-            child: const Text('Annuler'),
+            child: Text(AppLocalizations.of(context).cancel),
           ),
           FilledButton(
             onPressed: saving ? null : save,
