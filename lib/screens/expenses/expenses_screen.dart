@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/utils/app_error_mapper.dart';
 import '../../data/models/expense.dart';
 import '../../data/repositories/expense_repo.dart';
+import '../../l10n/app_localizations.dart';
 
 class ExpensesScreen extends StatefulWidget {
   const ExpensesScreen({super.key});
@@ -63,6 +64,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
         builder: (dialogContext) {
           return StatefulBuilder(
             builder: (context, setDialogState) {
+              final l10n = AppLocalizations.of(context);
               final amount = double.tryParse(amountController.text) ?? 0;
               final tax = double.tryParse(taxController.text) ?? 0;
               final tva = amount * tax / 100;
@@ -70,7 +72,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
 
               return AlertDialog(
                 title: Text(
-                  expense == null ? 'Nouvelle dépense' : 'Modifier la dépense',
+                  expense == null ? l10n.newExpense : l10n.editExpense,
                 ),
                 content: SingleChildScrollView(
                   child: Column(
@@ -79,21 +81,21 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                       TextField(
                         controller: supplierController,
                         decoration: const InputDecoration(
-                          labelText: 'Fournisseur *',
+                          labelText: l10n.supplier,
                         ),
                       ),
                       const SizedBox(height: 12),
                       TextField(
                         controller: descriptionController,
                         decoration: const InputDecoration(
-                          labelText: 'Description *',
+                          labelText: l10n.description,
                         ),
                       ),
                       const SizedBox(height: 12),
                       DropdownButtonFormField<String>(
                         initialValue: category,
                         decoration: const InputDecoration(
-                          labelText: 'Catégorie',
+                          labelText: l10n.category,
                         ),
                         items: _categories
                             .map(
@@ -120,7 +122,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                               ),
                               onChanged: (_) => setDialogState(() {}),
                               decoration: const InputDecoration(
-                                labelText: 'Montant HT *',
+                                labelText: l10n.amountHt,
                                 suffixText: 'DH',
                               ),
                             ),
@@ -145,7 +147,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                       ListTile(
                         contentPadding: EdgeInsets.zero,
                         leading: const Icon(Icons.calendar_today_outlined),
-                        title: const Text('Date'),
+                        title: Text(l10n.date),
                         subtitle: Text(
                           '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}',
                         ),
@@ -164,7 +166,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                       TextField(
                         controller: notesController,
                         maxLines: 2,
-                        decoration: const InputDecoration(labelText: 'Notes'),
+                        decoration: const InputDecoration(labelText: l10n.notes),
                       ),
                       if (error != null) ...[
                         const SizedBox(height: 12),
@@ -184,7 +186,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.of(dialogContext).pop(false),
-                    child: const Text('Annuler'),
+                    child: Text(l10n.cancel),
                   ),
                   FilledButton(
                     onPressed: () async {
@@ -193,7 +195,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                       if (supplierController.text.trim().isEmpty ||
                           descriptionController.text.trim().isEmpty) {
                         setDialogState(
-                          () => error = 'Veuillez remplir les champs obligatoires.',
+                          () => error = l10n.requiredFields,
                         );
                         return;
                       }
@@ -202,7 +204,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                           amount < 0 ||
                           tax < 0 ||
                           tax > 100) {
-                        setDialogState(() => error = 'Montant ou TVA invalide.');
+                        setDialogState(() => error = l10n.invalidAmountTax);
                         return;
                       }
 
@@ -238,7 +240,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                         );
                       }
                     },
-                    child: Text(expense == null ? 'Ajouter' : 'Enregistrer'),
+                    child: Text(expense == null ? l10n.addExpense : l10n.saveExpense),
                   ),
                 ],
               );
@@ -263,16 +265,16 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Supprimer la dépense ?'),
-        content: Text('Cette action supprimera « ${expense.description} ». '),
+        title: Text(l10n.deleteExpenseTitle),
+        content: Text(l10n.deleteExpenseMessage(expense.description)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Annuler'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Supprimer'),
+            child: Text(l10n.deleteExpense),
           ),
         ],
       ),
@@ -295,10 +297,10 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dépenses'),
+        title: Text(l10n.expenses),
         actions: [
           IconButton(
-            tooltip: 'Actualiser',
+            tooltip: l10n.refresh,
             onPressed: _reload,
             icon: const Icon(Icons.refresh),
           ),
@@ -307,7 +309,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openForm,
         icon: const Icon(Icons.add),
-        label: const Text('Dépense'),
+        label: Text(l10n.addExpense),
       ),
       body: FutureBuilder<List<ExpenseModel>>(
         future: _future,
@@ -328,7 +330,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                     const SizedBox(height: 12),
                     FilledButton(
                       onPressed: _reload,
-                      child: const Text('Réessayer'),
+                      child: Text(l10n.retry),
                     ),
                   ],
                 ),
@@ -357,7 +359,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                   return Card(
                     child: ListTile(
                       leading: const Icon(Icons.payments_outlined),
-                      title: const Text('Total dépenses'),
+                      title: Text(l10n.totalExpenses),
                       trailing: Text(
                         '${total.toStringAsFixed(2)} DH',
                         style: const TextStyle(fontWeight: FontWeight.bold),
@@ -443,18 +445,18 @@ class _EmptyExpenses extends StatelessWidget {
             const Icon(Icons.receipt_long_outlined, size: 64),
             const SizedBox(height: 16),
             const Text(
-              'Aucune dépense',
+              l10n.noExpenses,
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             const Text(
-              'Ajoutez votre première dépense pour commencer le suivi.',
+              l10n.addFirstExpense,
             ),
             const SizedBox(height: 16),
             FilledButton.icon(
               onPressed: onAdd,
               icon: const Icon(Icons.add),
-              label: const Text('Ajouter une dépense'),
+              label: Text(l10n.addExpense),
             ),
           ],
         ),
