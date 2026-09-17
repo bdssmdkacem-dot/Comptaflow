@@ -55,7 +55,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           const NavigationDestination(
             icon: Icon(Icons.dashboard_outlined),
             selectedIcon: Icon(Icons.dashboard_rounded),
-            label: 'Accueil',
+            label: l10n.dashboard,
           ),
           NavigationDestination(
             icon: const Icon(Icons.receipt_long_outlined),
@@ -65,7 +65,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           const NavigationDestination(
             icon: Icon(Icons.payments_outlined),
             selectedIcon: Icon(Icons.payments_rounded),
-            label: 'Dépenses',
+            label: widget.l10n.expenses,
           ),
           NavigationDestination(
             icon: const Icon(Icons.people_outline),
@@ -75,7 +75,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           const NavigationDestination(
             icon: Icon(Icons.inventory_2_outlined),
             selectedIcon: Icon(Icons.inventory_2_rounded),
-            label: 'Produits',
+            label: l10n.productsServices,
           ),
           NavigationDestination(
             icon: const Icon(Icons.calculate_outlined),
@@ -97,11 +97,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
       case 1:
         return l10n.invoices;
       case 2:
-        return 'Dépenses';
+        return l10n.expenses;
       case 3:
         return l10n.clients;
       case 4:
-        return 'Produits';
+        return l10n.productsServices;
       case 5:
         return l10n.cpu;
       case 6:
@@ -266,7 +266,7 @@ class _HomeState extends State<_Home> {
                   FilledButton.icon(
                     onPressed: _refresh,
                     icon: const Icon(Icons.refresh),
-                    label: const Text('Réessayer'),
+                    label: Text(widget.l10n.retry),
                   ),
                 ],
               ),
@@ -310,25 +310,25 @@ class _HomeState extends State<_Home> {
                     children: [
                       _MetricCard(
                         icon: Icons.account_balance_wallet_outlined,
-                        label: 'Encaissé',
+                        label: widget.l10n.cashCollected,
                         value: current.collected,
                         accent: AppColors.accent,
                       ),
                       _MetricCard(
                         icon: Icons.schedule_rounded,
-                        label: 'À encaisser',
+                        label: widget.l10n.toCollect,
                         value: current.receivable,
                         accent: AppColors.warning,
                       ),
                       _MetricCard(
                         icon: Icons.payments_outlined,
-                        label: 'Dépenses',
+                        label: widget.l10n.expenses,
                         value: current.expenses,
                         accent: AppColors.error,
                       ),
                       _MetricCard(
                         icon: Icons.insights_outlined,
-                        label: 'Solde',
+                        label: widget.l10n.balance,
                         value: current.operatingBalance,
                         accent: AppColors.success,
                       ),
@@ -694,8 +694,8 @@ class _ComparisonCard extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               _ChangeRow(label: 'CA facturé', value: _change(current.invoiced, previous.invoiced)),
-              _ChangeRow(label: 'Encaissé', value: _change(current.collected, previous.collected)),
-              _ChangeRow(label: 'Dépenses', value: _change(current.expenses, previous.expenses)),
+              _ChangeRow(label: widget.l10n.cashCollected, value: _change(current.collected, previous.collected)),
+              _ChangeRow(label: widget.l10n.expenses, value: _change(current.expenses, previous.expenses)),
             ],
           ),
         ),
@@ -780,7 +780,7 @@ class _QuickStatsCard extends StatelessWidget {
                 Expanded(
                   child: _CountItem(
                     icon: Icons.inventory_2_outlined,
-                    label: 'Produits',
+                    label: l10n.productsServices,
                     value: data.productCount,
                   ),
                 ),
