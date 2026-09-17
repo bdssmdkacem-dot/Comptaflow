@@ -1,4 +1,5 @@
 import '../../core/services/supabase_client.dart';
+import '../../core/utils/postgrest_search_sanitizer.dart';
 import '../models/client.dart';
 import '../models/invoice.dart';
 
@@ -21,7 +22,10 @@ class ClientRepository {
     final normalized = query.trim();
     var request = SupabaseClientService.client.from('clients').select();
     if (normalized.isNotEmpty) {
-      request = request.or('name.ilike.%$normalized%,ice.ilike.%$normalized%,phone.ilike.%$normalized%,email.ilike.%$normalized%,city.ilike.%$normalized%');
+      final term = PostgrestSearchSanitizer.escape(normalized);
+      request = request.or(
+        'name.ilike.%$term%,ice.ilike.%$term%,phone.ilike.%$term%,email.ilike.%$term%,city.ilike.%$term%',
+      );
     }
     final rows = await request.order('name');
     return (rows as List).map((row) => ClientModel.fromMap(Map<String, dynamic>.from(row))).toList();

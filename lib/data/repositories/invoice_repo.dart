@@ -35,13 +35,20 @@ class InvoiceRepository {
     if (user == null) throw StateError('Authentication required');
     if (items.isEmpty) throw ArgumentError('Invoice must contain at least one line');
     _validate(items);
+
+    final normalizedClientId = clientId?.trim();
+    if (normalizedClientId != null && normalizedClientId.isNotEmpty) {
+      final ownedClient = await client.from('clients').select('id').eq('id', normalizedClientId).eq('user_id', user.id).maybeSingle();
+      if (ownedClient == null) throw StateError('Client not found or not owned by current user');
+    }
+
     final number = invoiceNumber?.trim().isNotEmpty == true ? invoiceNumber!.trim() : await nextInvoiceNumber();
     final totalHt = items.fold<double>(0, (sum, item) => sum + item.totalHt);
     final totalTva = items.fold<double>(0, (sum, item) => sum + item.totalTva);
     final totalTtc = totalHt + totalTva;
     final profileRows = await client.from('profiles').select('full_name,company_name,ice,if_number,rc_number,tp_number,company_address,city,phone,email,payment_terms').eq('user_id', user.id).limit(1);
     final profile = profileRows.isEmpty ? <String, dynamic>{} : Map<String, dynamic>.from(profileRows.first);
-    final row = await client.from('invoices').insert({'user_id': user.id, 'client_id': clientId, 'invoice_number': number, 'date': date.toIso8601String().split('T').first, 'total_ht': totalHt, 'total_tva': totalTva, 'total_ttc': totalTtc, 'status': 'draft', 'seller_name': _first(profile['company_name'], profile['full_name']), 'seller_ice': profile['ice'], 'seller_if': profile['if_number'], 'seller_rc': profile['rc_number'], 'seller_tp': profile['tp_number'], 'seller_address': profile['company_address'], 'seller_city': profile['city'], 'seller_phone': profile['phone'], 'seller_email': profile['email'] ?? user.email, 'payment_terms': profile['payment_terms']}).select().single();
+    final row = await client.from('invoices').insert({'user_id': user.id, 'client_id': normalizedClientId?.isEmpty == true ? null : normalizedClientId, 'invoice_number': number, 'date': date.toIso8601String().split('T').first, 'total_ht': totalHt, 'total_tva': totalTva, 'total_ttc': totalTtc, 'status': 'draft', 'seller_name': _first(profile['company_name'], profile['full_name']), 'seller_ice': profile['ice'], 'seller_if': profile['if_number'], 'seller_rc': profile['rc_number'], 'seller_tp': profile['tp_number'], 'seller_address': profile['company_address'], 'seller_city': profile['city'], 'seller_phone': profile['phone'], 'seller_email': profile['email'] ?? user.email, 'payment_terms': profile['payment_terms']}).select().single();
     final invoice = InvoiceModel.fromMap(Map<String, dynamic>.from(row));
     try {
       await client.from('invoice_items').insert(items.map((item) => {'invoice_id': invoice.id, 'description': item.description.trim(), 'quantity': item.quantity, 'unit_price': item.unitPrice, 'tax_rate': item.taxRate}).toList());
@@ -58,10 +65,17 @@ class InvoiceRepository {
     final client = SupabaseClientService.client;
     final details = await getDetails(invoiceId);
     if (details.invoice.status != 'draft') throw StateError('Only draft invoices can be edited');
+    final normalizedClientId = clientId?.trim();
+    if (normalizedClientId != null && normalizedClientId.isNotEmpty) {
+      final user = client.auth.currentUser;
+      if (user == null) throw StateError('Authentication required');
+      final ownedClient = await client.from('clients').select('id').eq('id', normalizedClientId).eq('user_id', user.id).maybeSingle();
+      if (ownedClient == null) throw StateError('Client not found or not owned by current user');
+    }
     final totalHt = items.fold<double>(0, (sum, item) => sum + item.totalHt);
     final totalTva = items.fold<double>(0, (sum, item) => sum + item.totalTva);
     final totalTtc = totalHt + totalTva;
-    await client.from('invoices').update({'invoice_number': invoiceNumber.trim(), 'client_id': clientId, 'date': date.toIso8601String().split('T').first, 'total_ht': totalHt, 'total_tva': totalTva, 'total_ttc': totalTtc}).eq('id', invoiceId);
+    await client.from('invoices').update({'invoice_number': invoiceNumber.trim(), 'client_id': normalizedClientId?.isEmpty == true ? null : normalizedClientId, 'date': date.toIso8601String().split('T').first, 'total_ht': totalHt, 'total_tva': totalTva, 'total_ttc': totalTtc}).eq('id', invoiceId);
     await client.from('invoice_items').delete().eq('invoice_id', invoiceId);
     await client.from('invoice_items').insert(items.map((item) => {'invoice_id': invoiceId, 'description': item.description.trim(), 'quantity': item.quantity, 'unit_price': item.unitPrice, 'tax_rate': item.taxRate}).toList());
   }
