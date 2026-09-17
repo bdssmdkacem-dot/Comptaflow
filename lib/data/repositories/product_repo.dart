@@ -10,42 +10,26 @@ class ProductRepository {
     var query = SupabaseClientService.client.from('products').select().eq('user_id', userId);
     if (activeOnly) query = query.eq('active', true);
     final rows = await query.order('name');
-    final products = (rows as List)
-        .map((row) => ProductModel.fromMap(Map<String, dynamic>.from(row as Map)))
-        .toList();
+    final products = (rows as List).map((row) => ProductModel.fromMap(Map<String, dynamic>.from(row as Map))).toList();
     final term = search?.trim().toLowerCase();
     if (term == null || term.isEmpty) return products;
-    return products
-        .where((p) => p.name.toLowerCase().contains(term) ||
-            p.reference?.toLowerCase().contains(term) == true)
-        .toList(growable: false);
+    return products.where((p) => p.name.toLowerCase().contains(term) || p.reference?.toLowerCase().contains(term) == true).toList(growable: false);
   }
 
   Future<ProductModel> create({required String name, required double unitPrice, String? description, String? reference, String type = 'product', String unit = 'unit', double purchasePrice = 0, double taxRate = 0, bool stockManaged = false, double stockQuantity = 0, double minStock = 0}) async {
     final userId = SupabaseClientService.client.auth.currentUser?.id;
     if (userId == null) throw StateError('Not authenticated');
     _validate(name: name, unitPrice: unitPrice, purchasePrice: purchasePrice, taxRate: taxRate, stockQuantity: stockQuantity, minStock: minStock, type: type, stockManaged: stockManaged);
-    final row = await SupabaseClientService.client.from('products').insert({'user_id': userId, 'name': name.trim(), 'description': description, 'reference': reference?.trim().isEmpty == true ? null : reference?.trim(), 'type': type, 'unit': unit, 'unit_price': unitPrice, 'purchase_price': purchasePrice, 'tax_rate': taxRate, 'stock_managed': stockManaged, 'stock_quantity': stockQuantity, 'min_stock': minStock}).select().single();
+    final row = await SupabaseClientService.client.from('products').insert({'user_id': userId, 'name': name.trim(), 'description': description, 'reference': reference?.trim().isEmpty == true ? null : reference?.trim(), 'type': type, 'unit': unit, 'unit_price': unitPrice, 'purchase_price': purchasePrice, 'tax_rate': taxRate, 'stock_managed': stockManaged, 'stock_quantity': stockManaged ? stockQuantity : 0, 'min_stock': minStock}).select().single();
     return ProductModel.fromMap(Map<String, dynamic>.from(row));
   }
 
   Future<ProductModel> update({required String id, required String name, required double unitPrice, String? description, String? reference, required String type, required String unit, required double purchasePrice, required double taxRate, required bool stockManaged, required double minStock, bool? active}) async {
     _validate(name: name, unitPrice: unitPrice, purchasePrice: purchasePrice, taxRate: taxRate, stockQuantity: 0, minStock: minStock, type: type, stockManaged: stockManaged);
-    final current = await SupabaseClientService.client.from('products').select('stock_quantity').eq('id', id).single();
+    final current = await SupabaseClientService.client.from('products').select('stock_quantity,stock_managed').eq('id', id).single();
     final currentStock = (current['stock_quantity'] as num?)?.toDouble() ?? 0;
     if (!stockManaged && currentStock != 0) throw StateError('Stock quantity must be zero before disabling stock management');
-    final update = <String, dynamic>{
-      'name': name.trim(),
-      'description': description,
-      'reference': reference?.trim().isEmpty == true ? null : reference?.trim(),
-      'type': type,
-      'unit': unit,
-      'unit_price': unitPrice,
-      'purchase_price': purchasePrice,
-      'tax_rate': taxRate,
-      'stock_managed': stockManaged,
-      'min_stock': minStock,
-    };
+    final update = <String, dynamic>{'name': name.trim(), 'description': description, 'reference': reference?.trim().isEmpty == true ? null : reference?.trim(), 'type': type, 'unit': unit, 'unit_price': unitPrice, 'purchase_price': purchasePrice, 'tax_rate': taxRate, 'stock_managed': stockManaged, 'min_stock': minStock};
     if (active != null) update['active'] = active;
     final row = await SupabaseClientService.client.from('products').update(update).eq('id', id).select().single();
     return ProductModel.fromMap(Map<String, dynamic>.from(row));
@@ -58,19 +42,26 @@ class ProductRepository {
     if (quantity <= 0) throw ArgumentError('Quantity must be greater than zero');
     final userId = SupabaseClientService.client.auth.currentUser?.id;
     if (userId == null) throw StateError('Not authenticated');
-    await SupabaseClientService.client.from('stock_movements').insert({'user_id': userId, 'product_id': productId, 'type': 'purchase', 'quantity': quantity, 'note': note});
+    await _ensureStockManaged(productId, userId);
+    await SupabaseClientService.client.from('stock_movements').insert({'user_id': userId, 'product_id': productId, 'type': 'purchase', 'quantity': quantity, 'note': note?.trim().isEmpty == true ? null : note?.trim()});
   }
 
   Future<void> adjustStock({required String productId, required double quantity, required bool increase, String? note}) async {
     if (quantity <= 0) throw ArgumentError('Quantity must be greater than zero');
     final userId = SupabaseClientService.client.auth.currentUser?.id;
     if (userId == null) throw StateError('Not authenticated');
-    await SupabaseClientService.client.from('stock_movements').insert({'user_id': userId, 'product_id': productId, 'type': increase ? 'adjustment_in' : 'adjustment_out', 'quantity': quantity, 'note': note});
+    await _ensureStockManaged(productId, userId);
+    await SupabaseClientService.client.from('stock_movements').insert({'user_id': userId, 'product_id': productId, 'type': increase ? 'adjustment_in' : 'adjustment_out', 'quantity': quantity, 'note': note?.trim().isEmpty == true ? null : note?.trim()});
   }
 
   Future<List<Map<String, dynamic>>> stockMovements(String productId) async {
     final rows = await SupabaseClientService.client.from('stock_movements').select().eq('product_id', productId).order('created_at', ascending: false);
     return (rows as List).map((row) => Map<String, dynamic>.from(row as Map)).toList(growable: false);
+  }
+
+  Future<void> _ensureStockManaged(String productId, String userId) async {
+    final row = await SupabaseClientService.client.from('products').select('stock_managed').eq('id', productId).eq('user_id', userId).single();
+    if (row['stock_managed'] != true) throw StateError('Stock management is disabled for this product');
   }
 
   void _validate({required String name, required double unitPrice, required double purchasePrice, required double taxRate, required double stockQuantity, required double minStock, required String type, required bool stockManaged}) {
