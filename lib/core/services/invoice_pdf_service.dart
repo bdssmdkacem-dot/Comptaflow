@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 
 import '../../data/models/client.dart';
 import '../../data/models/invoice.dart';
@@ -23,13 +24,22 @@ class InvoicePdfService {
     required InvoiceDetails details,
     ClientModel? client,
     String? ownerEmail,
+    String languageCode = 'fr',
   }) async {
     client ??= await _resolveClient(invoice);
+
+    final isArabic = languageCode.toLowerCase().startsWith('ar');
+    pw.Font? baseFont;
+    pw.Font? boldFont;
+    if (isArabic) {
+      baseFont = await PdfGoogleFonts.notoSansArabicRegular();
+      boldFont = await PdfGoogleFonts.notoSansArabicBold();
+    }
 
     final document = pw.Document(
       title: 'Facture ${invoice.invoiceNumber}',
       author: invoice.sellerName?.isNotEmpty == true ? invoice.sellerName! : 'ComptaFlow',
-      subject: 'Facture ${invoice.invoiceNumber}',
+      subject: isArabic ? 'فاتورة ${invoice.invoiceNumber}' : 'Facture ${invoice.invoiceNumber}',
     );
 
     final date = _date(invoice.date);
@@ -43,6 +53,8 @@ class InvoicePdfService {
     document.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
+        textDirection: isArabic ? pw.TextDirection.rtl : pw.TextDirection.ltr,
+        theme: baseFont == null ? null : pw.ThemeData.withFont(base: baseFont, bold: boldFont),
         margin: const pw.EdgeInsets.fromLTRB(40, 38, 40, 42),
         maxPages: 50,
         header: (context) => context.pageNumber == 1
@@ -70,7 +82,7 @@ class InvoicePdfService {
           child: pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
-              pw.Text('Généré avec ComptaFlow', style: const pw.TextStyle(fontSize: 7.5, color: _muted)),
+              pw.Text(isArabic ? 'تم الإنشاء بواسطة ComptaFlow' : 'Généré avec ComptaFlow', style: const pw.TextStyle(fontSize: 7.5, color: _muted)),
               pw.Text('Page ${context.pageNumber} / ${context.pagesCount}', style: const pw.TextStyle(fontSize: 7.5, color: _muted)),
             ],
           ),
@@ -81,16 +93,17 @@ class InvoicePdfService {
             sellerName: sellerName,
             sellerEmail: sellerEmail,
             date: date,
+            languageCode: languageCode,
           ),
           pw.SizedBox(height: 24),
-          _clientCard(client),
+          _clientCard(client, languageCode),
           pw.SizedBox(height: 22),
-          _itemsTable(details.items),
+          _itemsTable(details.items, languageCode),
           pw.SizedBox(height: 16),
-          _totals(details),
+          _totals(details, languageCode),
           if (invoice.paymentTerms?.trim().isNotEmpty == true) ...[
             pw.SizedBox(height: 22),
-            _sectionTitle('Conditions de paiement'),
+            _sectionTitle(languageCode == 'ar' ? 'شروط الدفع' : 'Conditions de paiement'),
             pw.SizedBox(height: 5),
             pw.Container(
               width: double.infinity,
@@ -104,7 +117,7 @@ class InvoicePdfService {
             ),
           ],
           pw.SizedBox(height: 22),
-          _statusAndNote(invoice.status),
+          _statusAndNote(invoice.status, languageCode),
         ],
       ),
     );
@@ -117,6 +130,7 @@ class InvoicePdfService {
     required String sellerName,
     required String? sellerEmail,
     required String date,
+    required String languageCode,
   }) {
     final legal = <String>[
       if (_has(invoice.sellerIce)) 'ICE : ${invoice.sellerIce}',
@@ -180,11 +194,11 @@ class InvoicePdfService {
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    pw.Text('FACTURE', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: _brand)),
+                    pw.Text(languageCode == 'ar' ? 'فاتورة' : 'FACTURE', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: _brand)),
                     pw.SizedBox(height: 4),
                     pw.Text(invoice.invoiceNumber, style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: _ink)),
                     pw.SizedBox(height: 6),
-                    pw.Text('Date d’émission', style: const pw.TextStyle(fontSize: 7.5, color: _muted)),
+                    pw.Text(languageCode == 'ar' ? 'تاريخ الإصدار' : 'Date d’émission', style: const pw.TextStyle(fontSize: 7.5, color: _muted)),
                     pw.SizedBox(height: 2),
                     pw.Text(date, style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: _ink)),
                   ],
@@ -197,8 +211,8 @@ class InvoicePdfService {
     );
   }
 
-  pw.Widget _clientCard(ClientModel? client) {
-    final name = client?.name.trim().isNotEmpty == true ? client!.name.trim() : 'Client comptant';
+  pw.Widget _clientCard(ClientModel? client, String languageCode) {
+    final name = client?.name.trim().isNotEmpty == true ? client!.name.trim() : (languageCode == 'ar' ? 'عميل نقدي' : 'Client comptant');
     final details = <String>[
       if (_has(client?.address)) client!.address!.trim(),
       if (_has(client?.city)) client!.city!.trim(),
@@ -233,7 +247,7 @@ class InvoicePdfService {
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                pw.Text('FACTURÉ À', style: pw.TextStyle(fontSize: 7.5, fontWeight: pw.FontWeight.bold, color: _brand)),
+                pw.Text(languageCode == 'ar' ? 'الفاتورة إلى' : 'FACTURÉ À', style: pw.TextStyle(fontSize: 7.5, fontWeight: pw.FontWeight.bold, color: _brand)),
                 pw.SizedBox(height: 4),
                 pw.Text(name, style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: _ink)),
                 if (details.isNotEmpty) ...[
@@ -258,7 +272,7 @@ class InvoicePdfService {
     );
   }
 
-  pw.Widget _itemsTable(List<InvoiceItemModel> items) {
+  pw.Widget _itemsTable(List<InvoiceItemModel> items, String languageCode) {
     return pw.Table(
       border: pw.TableBorder(
         horizontalInside: const pw.BorderSide(color: _line, width: 0.5),
@@ -272,7 +286,7 @@ class InvoicePdfService {
         4: pw.FlexColumnWidth(1.7),
       },
       children: [
-        _row(['Désignation', 'Qté', 'Prix HT', 'TVA', 'Total TTC'], header: true),
+        _row(languageCode == 'ar' ? ['البيان', 'الكمية', 'السعر HT', 'TVA', 'الإجمالي TTC'] : ['Désignation', 'Qté', 'Prix HT', 'TVA', 'Total TTC'], header: true, languageCode: languageCode),
         ...items.asMap().entries.map(
           (entry) => _row(
             [
@@ -283,13 +297,14 @@ class InvoicePdfService {
               '${_number(entry.value.totalTtc)} DH',
             ],
             zebra: entry.key.isOdd,
+            languageCode: languageCode,
           ),
         ),
       ],
     );
   }
 
-  pw.Widget _totals(InvoiceDetails details) {
+  pw.Widget _totals(InvoiceDetails details, String languageCode) {
     return pw.Row(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
@@ -297,7 +312,7 @@ class InvoicePdfService {
           child: pw.Padding(
             padding: const pw.EdgeInsets.only(top: 4, right: 20),
             child: pw.Text(
-              'Merci pour votre confiance.',
+              languageCode == 'ar' ? 'شكرًا لثقتكم.' : 'Merci pour votre confiance.',
               style: pw.TextStyle(fontSize: 8.5, color: _muted, fontStyle: pw.FontStyle.italic),
             ),
           ),
@@ -312,12 +327,12 @@ class InvoicePdfService {
           ),
           child: pw.Column(
             children: [
-              _totalRow('Total HT', details.calculatedHt),
-              _totalRow('TVA', details.calculatedTva),
+              _totalRow(languageCode == 'ar' ? 'الإجمالي HT' : 'Total HT', details.calculatedHt, languageCode),
+              _totalRow('TVA', details.calculatedTva, languageCode),
               pw.SizedBox(height: 4),
               pw.Container(height: 0.7, color: _brand),
               pw.SizedBox(height: 6),
-              _totalRow('Total TTC', details.calculatedTtc, bold: true),
+              _totalRow(languageCode == 'ar' ? 'الإجمالي TTC' : 'Total TTC', details.calculatedTtc, languageCode, bold: true),
             ],
           ),
         ),
@@ -325,7 +340,7 @@ class InvoicePdfService {
     );
   }
 
-  pw.Widget _statusAndNote(String status) {
+  pw.Widget _statusAndNote(String status, String languageCode) {
     return pw.Row(
       crossAxisAlignment: pw.CrossAxisAlignment.center,
       children: [
@@ -337,14 +352,14 @@ class InvoicePdfService {
             border: pw.Border.all(color: _brand, width: 0.5),
           ),
           child: pw.Text(
-            _statusLabel(status),
+            _statusLabel(status, languageCode),
             style: pw.TextStyle(fontSize: 7.5, fontWeight: pw.FontWeight.bold, color: _brandDark),
           ),
         ),
         pw.SizedBox(width: 10),
         pw.Expanded(
           child: pw.Text(
-            'Document commercial généré par ComptaFlow.',
+            languageCode == 'ar' ? 'مستند تجاري تم إنشاؤه بواسطة ComptaFlow.' : 'Document commercial généré par ComptaFlow.',
             style: const pw.TextStyle(fontSize: 7.5, color: _muted),
           ),
         ),
@@ -352,7 +367,7 @@ class InvoicePdfService {
     );
   }
 
-  pw.TableRow _row(List<String> values, {bool header = false, bool zebra = false}) {
+  pw.TableRow _row(List<String> values, {bool header = false, bool zebra = false, String languageCode = 'fr'}) {
     return pw.TableRow(
       decoration: header
           ? const pw.BoxDecoration(color: _brandDark)
@@ -367,7 +382,9 @@ class InvoicePdfService {
               padding: const pw.EdgeInsets.symmetric(horizontal: 7, vertical: 8),
               child: pw.Text(
                 entry.value,
-                textAlign: entry.key == 0 ? pw.TextAlign.left : pw.TextAlign.right,
+                textAlign: entry.key == 0
+                    ? (languageCode == 'ar' ? pw.TextAlign.right : pw.TextAlign.left)
+                    : (languageCode == 'ar' ? pw.TextAlign.left : pw.TextAlign.right),
                 style: pw.TextStyle(
                   fontSize: 7.8,
                   color: header ? PdfColors.white : _ink,
@@ -380,7 +397,7 @@ class InvoicePdfService {
     );
   }
 
-  pw.Widget _totalRow(String label, double value, {bool bold = false}) {
+  pw.Widget _totalRow(String label, double value, String languageCode, {bool bold = false}) {
     return pw.Padding(
       padding: const pw.EdgeInsets.symmetric(vertical: 2.5),
       child: pw.Row(
@@ -432,16 +449,20 @@ class InvoicePdfService {
 
   String _number(double value) => value.toStringAsFixed(2);
 
-  String _statusLabel(String status) {
+  String _statusLabel(String status, String languageCode) {
+    if (languageCode == 'ar') {
+      switch (status) {
+        case 'issued': return 'صادرة';
+        case 'paid': return 'مدفوعة';
+        case 'cancelled': return 'ملغاة';
+        default: return 'مسودة';
+      }
+    }
     switch (status) {
-      case 'issued':
-        return 'Émise';
-      case 'paid':
-        return 'Payée';
-      case 'cancelled':
-        return 'Annulée';
-      default:
-        return 'Brouillon';
+      case 'issued': return 'Émise';
+      case 'paid': return 'Payée';
+      case 'cancelled': return 'Annulée';
+      default: return 'Brouillon';
     }
   }
 }
