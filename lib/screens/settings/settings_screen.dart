@@ -38,11 +38,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final paymentTerms = TextEditingController(text: profile?.paymentTerms ?? '');
     final formKey = GlobalKey<FormState>();
 
+    final l10n = AppLocalizations.of(context);
     try {
       final saved = await showDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(
-          title: const Text(l10n.billingIdentity),
+          title: Text(l10n.billingIdentity),
           content: SizedBox(
             width: 620,
             child: Form(
@@ -50,26 +51,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: SingleChildScrollView(
                 child: Column(
                   children: [
-                    TextFormField(controller: companyName, decoration: const InputDecoration(labelText: l10n.companyName)),
-                    TextFormField(controller: fullName, decoration: const InputDecoration(labelText: l10n.responsibleName), validator: (v) => v == null || v.trim().isEmpty ? 'Nom requis' : null),
+                    TextFormField(controller: companyName, decoration: InputDecoration(labelText: l10n.companyName)),
+                    TextFormField(controller: fullName, decoration: InputDecoration(labelText: l10n.responsibleName), validator: (v) => v == null || v.trim().isEmpty ? 'Nom requis' : null),
                     const SizedBox(height: 8),
-                    TextFormField(controller: ice, decoration: const InputDecoration(labelText: l10n.iceLabel)),
-                    TextFormField(controller: ifNumber, decoration: const InputDecoration(labelText: l10n.ifLabel)),
-                    TextFormField(controller: rc, decoration: const InputDecoration(labelText: l10n.rcLabel)),
+                    TextFormField(controller: ice, decoration: InputDecoration(labelText: l10n.iceLabel)),
+                    TextFormField(controller: ifNumber, decoration: InputDecoration(labelText: l10n.ifLabel)),
+                    TextFormField(controller: rc, decoration: InputDecoration(labelText: l10n.rcLabel)),
                     TextFormField(controller: tp, decoration: const InputDecoration(labelText: 'TP — Taxe professionnelle')),
                     const Divider(height: 24),
-                    TextFormField(controller: address, decoration: const InputDecoration(labelText: l10n.address)),
-                    TextFormField(controller: city, decoration: const InputDecoration(labelText: l10n.city)),
-                    TextFormField(controller: phone, decoration: const InputDecoration(labelText: l10n.phone)),
-                    TextFormField(controller: email, keyboardType: TextInputType.emailAddress, decoration: const InputDecoration(labelText: l10n.email)),
-                    TextFormField(controller: paymentTerms, decoration: const InputDecoration(labelText: l10n.paymentTerms, hintText: l10n.paymentTermsHint)),
+                    TextFormField(controller: address, decoration: InputDecoration(labelText: l10n.address)),
+                    TextFormField(controller: city, decoration: InputDecoration(labelText: l10n.city)),
+                    TextFormField(controller: phone, decoration: InputDecoration(labelText: l10n.phone)),
+                    TextFormField(controller: email, keyboardType: TextInputType.emailAddress, decoration: InputDecoration(labelText: l10n.email)),
+                    TextFormField(controller: paymentTerms, decoration: InputDecoration(labelText: l10n.paymentTerms, hintText: l10n.paymentTermsHint)),
                   ],
                 ),
               ),
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text(l10n.cancel)),
+            TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: Text(l10n.cancel)),
             FilledButton(
               onPressed: () async {
                 if (!formKey.currentState!.validate()) return;
@@ -92,7 +93,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   if (dialogContext.mounted) ScaffoldMessenger.of(dialogContext).showSnackBar(SnackBar(content: Text('${l10n.errorPrefix} : $error')));
                 }
               },
-              child: const Text(l10n.saveChanges),
+              child: Text(l10n.saveChanges),
             ),
           ],
         ),
@@ -131,7 +132,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             return Card(
               child: ListTile(
                 leading: const Icon(Icons.business_outlined),
-                title: const Text(l10n.billingIdentity),
+                title: Text(l10n.billingIdentity),
                 subtitle: Text(profile?.companyName?.isNotEmpty == true ? profile!.companyName! : l10n.legalInfoHint),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => _editCompanyProfile(profile),
