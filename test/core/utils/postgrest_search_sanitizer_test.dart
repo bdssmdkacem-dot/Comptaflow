@@ -7,7 +7,7 @@ void main() {
     test('escapes PostgREST filter syntax and LIKE wildcards', () {
       expect(
         PostgrestSearchSanitizer.escape(r'a%,b_(c)\'),
-        r'a\%,b\_\(c\)\\',
+        r'a\%\,b\_\(c\)\\',
       );
     });
 
