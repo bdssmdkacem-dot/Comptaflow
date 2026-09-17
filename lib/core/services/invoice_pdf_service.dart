@@ -37,7 +37,7 @@ class InvoicePdfService {
     }
 
     final document = pw.Document(
-      title: 'Facture ${invoice.invoiceNumber}',
+      title: isArabic ? 'فاتورة ${invoice.invoiceNumber}' : 'Facture ${invoice.invoiceNumber}',
       author: invoice.sellerName?.isNotEmpty == true ? invoice.sellerName! : 'ComptaFlow',
       subject: isArabic ? 'فاتورة ${invoice.invoiceNumber}' : 'Facture ${invoice.invoiceNumber}',
     );
@@ -142,7 +142,7 @@ class InvoicePdfService {
     final contact = <String>[
       if (_has(invoice.sellerAddress)) invoice.sellerAddress!.trim(),
       if (_has(invoice.sellerCity)) invoice.sellerCity!.trim(),
-      if (_has(invoice.sellerPhone)) 'Tél. : ${invoice.sellerPhone!.trim()}',
+      if (_has(invoice.sellerPhone)) '${languageCode == 'ar' ? 'الهاتف' : 'Tél.'} : ${invoice.sellerPhone!.trim()}',
       if (_has(sellerEmail)) sellerEmail!.trim(),
     ];
 
@@ -216,7 +216,7 @@ class InvoicePdfService {
     final details = <String>[
       if (_has(client?.address)) client!.address!.trim(),
       if (_has(client?.city)) client!.city!.trim(),
-      if (_has(client?.phone)) 'Tél. : ${client!.phone!.trim()}',
+      if (_has(client?.phone)) '${languageCode == 'ar' ? 'الهاتف' : 'Tél.'} : ${client!.phone!.trim()}',
       if (_has(client?.email)) client!.email!.trim(),
     ];
     final legal = <String>[
