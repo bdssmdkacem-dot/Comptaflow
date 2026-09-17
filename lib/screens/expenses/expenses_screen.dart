@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/utils/app_error_mapper.dart';
 import '../../data/models/expense.dart';
 import '../../data/repositories/expense_repo.dart';
 
@@ -232,7 +233,9 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                           Navigator.of(dialogContext).pop(true);
                         }
                       } catch (e) {
-                        setDialogState(() => error = e.toString());
+                        setDialogState(
+                          () => error = AppErrorMapper.message(e),
+                        );
                       }
                     },
                     child: Text(expense == null ? 'Ajouter' : 'Enregistrer'),
@@ -283,7 +286,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Suppression impossible : $e')),
+        SnackBar(content: Text('Suppression impossible : ${AppErrorMapper.message(e)}')),
       );
     }
   }
@@ -321,7 +324,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                   children: [
                     const Icon(Icons.error_outline, size: 48),
                     const SizedBox(height: 12),
-                    Text('Impossible de charger les dépenses : ${snapshot.error}'),
+                    Text(AppErrorMapper.message(snapshot.error!)),
                     const SizedBox(height: 12),
                     FilledButton(
                       onPressed: _reload,
