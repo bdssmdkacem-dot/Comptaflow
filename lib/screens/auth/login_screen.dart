@@ -37,12 +37,13 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  String? _required(String? value, String label) => value == null || value.trim().isEmpty ? '$label obligatoire' : null;
+  String? _required(String? value, String label) => value == null || value.trim().isEmpty ? '${AppLocalizations.of(context).requiredField}' : null;
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
     try {
+      final l10n = AppLocalizations.of(context);
       final auth = context.read<AuthProvider>();
       if (_signUpMode) {
         await auth.signUp(
@@ -63,9 +64,9 @@ class _LoginScreenState extends State<LoginScreen> {
           context: context,
           builder: (_) => AlertDialog(
             icon: const Icon(Icons.mark_email_read_outlined),
-            title: const Text(l10n.verifyEmailTitle),
+            title: Text(l10n.verifyEmailTitle),
             content: Text(l10n.verifyEmailMessage(_email.text.trim())),
-            actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text(l10n.ok))],
+            actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(l10n.ok))],
           ),
         );
       } else {
