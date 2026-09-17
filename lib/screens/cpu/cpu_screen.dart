@@ -49,12 +49,12 @@ class _CpuScreenState extends State<CpuScreen> {
       if (!mounted) return;
       setState(() => _future = _repository.list());
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Déclaration enregistrée')),
+        SnackBar(content: Text(AppLocalizations.of(context).ok)),
       );
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur : $error')),
+        SnackBar(content: Text('${AppLocalizations.of(context).errorPrefix} : $error')),
       );
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -68,7 +68,7 @@ class _CpuScreenState extends State<CpuScreen> {
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur : $error')),
+        SnackBar(content: Text('${AppLocalizations.of(context).errorPrefix} : $error')),
       );
     }
   }
@@ -77,11 +77,11 @@ class _CpuScreenState extends State<CpuScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Supprimer la déclaration ?'),
-        content: const Text('Cette action est irréversible.'),
+        title: Text(AppLocalizations.of(context).deleteDeclarationTitle),
+        content: Text(AppLocalizations.of(context).irreversible),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Annuler')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Supprimer')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(AppLocalizations.of(context).cancel)),
+          FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(AppLocalizations.of(context).delete)),
         ],
       ),
     );
@@ -91,7 +91,7 @@ class _CpuScreenState extends State<CpuScreen> {
       if (mounted) setState(() => _future = _repository.list());
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur : $error')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${AppLocalizations.of(context).errorPrefix} : $error')));
     }
   }
 
@@ -101,7 +101,7 @@ class _CpuScreenState extends State<CpuScreen> {
       initialDate: _period,
       firstDate: DateTime(2020),
       lastDate: DateTime(2100),
-      helpText: 'Choisir le mois',
+      helpText: AppLocalizations.of(context).chooseMonth,
     );
     if (picked != null && mounted) {
       setState(() => _period = DateTime(picked.year, picked.month, 1));
@@ -120,15 +120,15 @@ class _CpuScreenState extends State<CpuScreen> {
       children: [
         Text(l10n.cpu, style: Theme.of(context).textTheme.headlineMedium),
         const SizedBox(height: 8),
-        const Text('Calculez, enregistrez et suivez vos déclarations CPU par période.'),
+        Text(AppLocalizations.of(context).cpuDescription),
         const SizedBox(height: 20),
         DropdownButtonFormField<String>(
           initialValue: _activity,
-          decoration: const InputDecoration(labelText: 'Activité'),
+          decoration: const InputDecoration(labelText: AppLocalizations.of(context).activity),
           items: const [
-            DropdownMenuItem(value: 'services', child: Text('Services — 10%')),
-            DropdownMenuItem(value: 'artisanal', child: Text('Artisanal — 5%')),
-            DropdownMenuItem(value: 'commercial', child: Text('Commercial — 3%')),
+            DropdownMenuItem(value: 'services', child: Text(AppLocalizations.of(context).servicesRate)),
+            DropdownMenuItem(value: 'artisanal', child: Text(AppLocalizations.of(context).artisanalRate)),
+            DropdownMenuItem(value: 'commercial', child: Text(AppLocalizations.of(context).commercialRate)),
           ],
           onChanged: (v) => setState(() => _activity = v ?? 'services'),
         ),
@@ -137,19 +137,19 @@ class _CpuScreenState extends State<CpuScreen> {
           controller: _ca,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           onChanged: (_) => setState(() {}),
-          decoration: const InputDecoration(labelText: 'CA encaissé', suffixText: 'MAD'),
+          decoration: const InputDecoration(labelText: AppLocalizations.of(context).cashCollectedCa, suffixText: 'MAD'),
         ),
         const SizedBox(height: 12),
         OutlinedButton.icon(
           onPressed: _pickPeriod,
           icon: const Icon(Icons.calendar_month_outlined),
-          label: Text('Période : ${_monthLabel(_period)}'),
+          label: Text('${AppLocalizations.of(context).period} : ${_monthLabel(_period)}'),
         ),
         const SizedBox(height: 16),
         Card(
           child: ListTile(
-            title: const Text('CPU estimée'),
-            subtitle: Text('Taux ${(100 * _rate).toStringAsFixed(0)}%'),
+            title: Text(AppLocalizations.of(context).estimatedCpu),
+            subtitle: Text('${AppLocalizations.of(context).rate} ${(100 * _rate).toStringAsFixed(0)}%'),
             trailing: Text('${amount.toStringAsFixed(2)} MAD', style: Theme.of(context).textTheme.titleMedium),
           ),
         ),
@@ -157,10 +157,10 @@ class _CpuScreenState extends State<CpuScreen> {
         FilledButton.icon(
           onPressed: _saving ? null : _save,
           icon: _saving ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.save_outlined),
-          label: const Text('Enregistrer la déclaration'),
+          label: Text(AppLocalizations.of(context).saveDeclaration),
         ),
         const SizedBox(height: 28),
-        Text('Historique', style: Theme.of(context).textTheme.titleLarge),
+        Text(AppLocalizations.of(context).history, style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 8),
         FutureBuilder<List<CpuDeclaration>>(
           future: _future,
@@ -169,10 +169,10 @@ class _CpuScreenState extends State<CpuScreen> {
               return const Center(child: Padding(padding: EdgeInsets.all(24), child: CircularProgressIndicator()));
             }
             if (snapshot.hasError) {
-              return Card(child: ListTile(title: const Text('Impossible de charger l’historique'), subtitle: Text('${snapshot.error}')));
+              return Card(child: ListTile(title: Text(AppLocalizations.of(context).loadHistoryError), subtitle: Text('${snapshot.error}')));
             }
             final items = snapshot.data ?? const <CpuDeclaration>[];
-            if (items.isEmpty) return const Card(child: ListTile(title: Text('Aucune déclaration enregistrée')));
+            if (items.isEmpty) return Card(child: ListTile(title: Text(AppLocalizations.of(context).noDeclarations)));
             return Column(
               children: items.map((item) => Card(
                 child: ListTile(
@@ -184,8 +184,8 @@ class _CpuScreenState extends State<CpuScreen> {
                       if (action == 'delete') _delete(item);
                     },
                     itemBuilder: (_) => [
-                      if (!item.isDeclared) const PopupMenuItem(value: 'declare', child: Text('Marquer déclarée')),
-                      const PopupMenuItem(value: 'delete', child: Text('Supprimer')),
+                      if (!item.isDeclared) PopupMenuItem(value: 'declare', child: Text(AppLocalizations.of(context).markDeclared)),
+                      PopupMenuItem(value: 'delete', child: Text(AppLocalizations.of(context).delete)),
                     ],
                   ),
                   leading: CircleAvatar(child: Icon(item.isDeclared ? Icons.check : Icons.pending_outlined)),
