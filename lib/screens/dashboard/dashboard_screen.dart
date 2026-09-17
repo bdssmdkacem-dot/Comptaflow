@@ -52,9 +52,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         onDestinationSelected: (value) => setState(() => _index = value),
         labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
         destinations: [
-          const NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(Icons.dashboard_rounded),
+          NavigationDestination(
+            icon: const Icon(Icons.dashboard_outlined),
+            selectedIcon: const Icon(Icons.dashboard_rounded),
             label: l10n.dashboard,
           ),
           NavigationDestination(
@@ -62,19 +62,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
             selectedIcon: const Icon(Icons.receipt_long_rounded),
             label: l10n.invoices,
           ),
-          const NavigationDestination(
-            icon: Icon(Icons.payments_outlined),
-            selectedIcon: Icon(Icons.payments_rounded),
-            label: widget.l10n.expenses,
+          NavigationDestination(
+            icon: const Icon(Icons.payments_outlined),
+            selectedIcon: const Icon(Icons.payments_rounded),
+            label: l10n.expenses,
           ),
           NavigationDestination(
             icon: const Icon(Icons.people_outline),
             selectedIcon: const Icon(Icons.people_rounded),
             label: l10n.clients,
           ),
-          const NavigationDestination(
-            icon: Icon(Icons.inventory_2_outlined),
-            selectedIcon: Icon(Icons.inventory_2_rounded),
+          NavigationDestination(
+            icon: const Icon(Icons.inventory_2_outlined),
+            selectedIcon: const Icon(Icons.inventory_2_rounded),
             label: l10n.productsServices,
           ),
           NavigationDestination(
@@ -694,8 +694,8 @@ class _ComparisonCard extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               _ChangeRow(label: 'CA facturé', value: _change(current.invoiced, previous.invoiced)),
-              _ChangeRow(label: widget.l10n.cashCollected, value: _change(current.collected, previous.collected)),
-              _ChangeRow(label: widget.l10n.expenses, value: _change(current.expenses, previous.expenses)),
+              _ChangeRow(label: AppLocalizations.of(context).cashCollected, value: _change(current.collected, previous.collected)),
+              _ChangeRow(label: AppLocalizations.of(context).expenses, value: _change(current.expenses, previous.expenses)),
             ],
           ),
         ),
@@ -780,7 +780,7 @@ class _QuickStatsCard extends StatelessWidget {
                 Expanded(
                   child: _CountItem(
                     icon: Icons.inventory_2_outlined,
-                    label: l10n.productsServices,
+                    label: AppLocalizations.of(context).productsServices,
                     value: data.productCount,
                   ),
                 ),
