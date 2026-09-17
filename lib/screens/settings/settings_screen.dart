@@ -52,7 +52,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Column(
                   children: [
                     TextFormField(controller: companyName, decoration: InputDecoration(labelText: l10n.companyName)),
-                    TextFormField(controller: fullName, decoration: InputDecoration(labelText: l10n.responsibleName), validator: (v) => v == null || v.trim().isEmpty ? 'Nom requis' : null),
+                    TextFormField(controller: fullName, decoration: InputDecoration(labelText: l10n.responsibleName), validator: (v) => v == null || v.trim().isEmpty ? l10n.requiredField : null),
                     const SizedBox(height: 8),
                     TextFormField(controller: ice, decoration: InputDecoration(labelText: l10n.iceLabel)),
                     TextFormField(controller: ifNumber, decoration: InputDecoration(labelText: l10n.ifLabel)),
@@ -141,9 +141,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           },
         ),
         const SizedBox(height: 8),
-        const Card(
+        Card(
           child: Padding(
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             child: Text(l10n.billingFrozenNote),
           ),
         ),
