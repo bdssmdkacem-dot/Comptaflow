@@ -28,7 +28,7 @@ abstract final class AppTheme {
       onError: Colors.white,
     );
 
-    final shape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppColors.radiusMd));
+    final inputShape = OutlineInputBorder(borderRadius: BorderRadius.circular(AppColors.radiusMd));
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
@@ -81,11 +81,11 @@ abstract final class AppTheme {
         hintStyle: const TextStyle(color: AppColors.textSecondary),
         labelStyle: const TextStyle(color: AppColors.textSecondary),
         floatingLabelStyle: const TextStyle(color: AppColors.accent, fontWeight: FontWeight.w600),
-        border: shape.copyWith(side: const BorderSide(color: AppColors.border)),
-        enabledBorder: shape.copyWith(side: const BorderSide(color: AppColors.border)),
-        focusedBorder: shape.copyWith(side: const BorderSide(color: AppColors.accent, width: 1.5)),
-        errorBorder: shape.copyWith(side: const BorderSide(color: AppColors.error)),
-        focusedErrorBorder: shape.copyWith(side: const BorderSide(color: AppColors.error, width: 1.5)),
+        border: inputShape.copyWith(borderSide: const BorderSide(color: AppColors.border)),
+        enabledBorder: inputShape.copyWith(borderSide: const BorderSide(color: AppColors.border)),
+        focusedBorder: inputShape.copyWith(borderSide: const BorderSide(color: AppColors.accent, width: 1.5)),
+        errorBorder: inputShape.copyWith(borderSide: const BorderSide(color: AppColors.error)),
+        focusedErrorBorder: inputShape.copyWith(borderSide: const BorderSide(color: AppColors.error, width: 1.5)),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
