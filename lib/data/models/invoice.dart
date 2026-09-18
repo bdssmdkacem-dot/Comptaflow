@@ -21,6 +21,15 @@ class InvoiceModel {
     this.sellerCity,
     this.sellerPhone,
     this.sellerEmail,
+    this.buyerName,
+    this.buyerIce,
+    this.buyerIf,
+    this.buyerRc,
+    this.buyerTp,
+    this.buyerAddress,
+    this.buyerCity,
+    this.buyerPhone,
+    this.buyerEmail,
     this.paymentTerms,
   });
 
@@ -43,6 +52,15 @@ class InvoiceModel {
   final String? sellerCity;
   final String? sellerPhone;
   final String? sellerEmail;
+  final String? buyerName;
+  final String? buyerIce;
+  final String? buyerIf;
+  final String? buyerRc;
+  final String? buyerTp;
+  final String? buyerAddress;
+  final String? buyerCity;
+  final String? buyerPhone;
+  final String? buyerEmail;
   final String? paymentTerms;
 
   CanonicalInvoiceStatus get canonicalStatus => switch (status) {
@@ -75,7 +93,18 @@ class InvoiceModel {
         phone: sellerPhone,
         email: sellerEmail,
       ),
-      buyer: buyer,
+      buyer: buyer ??
+          CanonicalInvoiceParty(
+            name: buyerName,
+            ice: buyerIce,
+            ifNumber: buyerIf,
+            rcNumber: buyerRc,
+            tpNumber: buyerTp,
+            address: buyerAddress,
+            city: buyerCity,
+            phone: buyerPhone,
+            email: buyerEmail,
+          ),
       paymentTerms: paymentTerms,
     );
   }
@@ -100,6 +129,15 @@ class InvoiceModel {
         sellerCity: map['seller_city'] as String?,
         sellerPhone: map['seller_phone'] as String?,
         sellerEmail: map['seller_email'] as String?,
+        buyerName: map['buyer_name'] as String?,
+        buyerIce: map['buyer_ice'] as String?,
+        buyerIf: map['buyer_if'] as String?,
+        buyerRc: map['buyer_rc'] as String?,
+        buyerTp: map['buyer_tp'] as String?,
+        buyerAddress: map['buyer_address'] as String?,
+        buyerCity: map['buyer_city'] as String?,
+        buyerPhone: map['buyer_phone'] as String?,
+        buyerEmail: map['buyer_email'] as String?,
         paymentTerms: map['payment_terms'] as String?,
       );
 }
@@ -156,7 +194,8 @@ class InvoiceDetails {
   double get totalTva => calculatedTva;
   double get totalTtc => calculatedTtc;
 
-  CanonicalInvoice toCanonical({CanonicalInvoiceParty? buyer}) => invoice.toCanonical(
+  CanonicalInvoice toCanonical({CanonicalInvoiceParty? buyer}) =>
+      invoice.toCanonical(
         lines: items.map((item) => item.toCanonical()).toList(growable: false),
         buyer: buyer,
       );
