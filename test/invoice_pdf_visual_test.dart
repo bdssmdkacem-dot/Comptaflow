@@ -43,6 +43,7 @@ void main() {
       final bytes = await service.build(invoice: invoice, details: details, languageCode: 'fr', compress: false);
       expect(bytes.length, greaterThan(1000));
       expect(_pageCount(bytes), greaterThanOrEqualTo(1));
+      await _save('french-invoice.pdf', bytes);
     });
 
     test('long invoice spans multiple A4 pages', () async {
