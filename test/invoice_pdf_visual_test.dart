@@ -6,7 +6,7 @@ import 'package:comptaflow/data/models/invoice.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
+  WidgetsFlutterBinding.ensureInitialized();
   const service = InvoicePdfService();
 
   group('Invoice PDF visual smoke cases', () {
