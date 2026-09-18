@@ -337,7 +337,7 @@ class _DashboardHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'ComptaFlow',
+                widget.l10n.appName,
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w800,
                   letterSpacing: -0.2,
@@ -471,7 +471,7 @@ class _HeroRevenueCard extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'CA facturé',
+                  widget.l10n.caInvoiced,
                   style: theme.textTheme.titleSmall?.copyWith(
                     color: Colors.white.withValues(alpha: 0.88),
                     fontWeight: FontWeight.w700,
@@ -520,11 +520,11 @@ class _HeroRevenueCard extends StatelessWidget {
   String _periodLabel() {
     switch (period) {
       case _DashboardPeriod.month:
-        return 'Ce mois';
+        return widget.l10n.dashboardPeriodMonth;
       case _DashboardPeriod.quarter:
-        return 'Ce trimestre';
+        return widget.l10n.dashboardPeriodQuarter;
       case _DashboardPeriod.year:
-        return 'Cette année';
+        return widget.l10n.dashboardPeriodYear;
     }
   }
 }
@@ -617,14 +617,14 @@ class _ComparisonCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 10),
                   Text(
-                    'Évolution',
+                    AppLocalizations.of(context).evolution,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
                   ),
                   const Spacer(),
                   Text(
-                    'vs période précédente',
+                    AppLocalizations.of(context).vsPreviousPeriod,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: AppColors.textSecondary,
                     ),
@@ -632,7 +632,7 @@ class _ComparisonCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 12),
-              _ChangeRow(label: 'CA facturé', value: _change(current.invoiced, previous.invoiced)),
+              _ChangeRow(label: widget.l10n.caInvoiced, value: _change(current.invoiced, previous.invoiced)),
               _ChangeRow(label: AppLocalizations.of(context).cashCollected, value: _change(current.collected, previous.collected)),
               _ChangeRow(label: AppLocalizations.of(context).expenses, value: _change(current.expenses, previous.expenses)),
             ],
@@ -694,7 +694,7 @@ class _QuickStatsCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Votre activité',
+              AppLocalizations.of(context).yourActivity,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w800,
               ),
@@ -705,7 +705,7 @@ class _QuickStatsCard extends StatelessWidget {
                 Expanded(
                   child: _CountItem(
                     icon: Icons.receipt_long_rounded,
-                    label: 'Factures',
+                    label: AppLocalizations.of(context).invoicesCount,
                     value: data.invoices.length,
                   ),
                 ),
@@ -785,7 +785,7 @@ class _SummaryCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 10),
                   Text(
-                    'Synthèse TVA',
+                    AppLocalizations.of(context).vatSummary,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
@@ -802,7 +802,7 @@ class _SummaryCard extends StatelessWidget {
               _SummaryRow(label: 'TVA nette estimée', value: metrics.netVat, bold: true),
               const SizedBox(height: 6),
               Text(
-                'Indicateur de gestion, pas un calcul fiscal officiel.',
+                AppLocalizations.of(context).vatManagementNote,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: AppColors.textSecondary,
                 ),
