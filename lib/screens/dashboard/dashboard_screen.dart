@@ -337,7 +337,7 @@ class _DashboardHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                widget.l10n.appName,
+                AppLocalizations.of(context).appName,
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w800,
                   letterSpacing: -0.2,
@@ -471,7 +471,7 @@ class _HeroRevenueCard extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  widget.l10n.caInvoiced,
+                  AppLocalizations.of(context).caInvoiced,
                   style: theme.textTheme.titleSmall?.copyWith(
                     color: Colors.white.withValues(alpha: 0.88),
                     fontWeight: FontWeight.w700,
@@ -632,7 +632,7 @@ class _ComparisonCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 12),
-              _ChangeRow(label: widget.l10n.caInvoiced, value: _change(current.invoiced, previous.invoiced)),
+              _ChangeRow(label: AppLocalizations.of(context).caInvoiced, value: _change(current.invoiced, previous.invoiced)),
               _ChangeRow(label: AppLocalizations.of(context).cashCollected, value: _change(current.collected, previous.collected)),
               _ChangeRow(label: AppLocalizations.of(context).expenses, value: _change(current.expenses, previous.expenses)),
             ],
