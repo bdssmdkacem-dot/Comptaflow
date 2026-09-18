@@ -80,21 +80,21 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                     children: [
                       TextField(
                         controller: supplierController,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           labelText: l10n.supplier,
                         ),
                       ),
                       const SizedBox(height: 12),
                       TextField(
                         controller: descriptionController,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           labelText: l10n.description,
                         ),
                       ),
                       const SizedBox(height: 12),
                       DropdownButtonFormField<String>(
                         initialValue: category,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           labelText: l10n.category,
                         ),
                         items: _categories
@@ -121,7 +121,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                                 decimal: true,
                               ),
                               onChanged: (_) => setDialogState(() {}),
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 labelText: l10n.amountHt,
                                 suffixText: 'DH',
                               ),
@@ -135,7 +135,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                                 decimal: true,
                               ),
                               onChanged: (_) => setDialogState(() {}),
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 labelText: 'TVA',
                                 suffixText: '%',
                               ),
@@ -166,7 +166,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                       TextField(
                         controller: notesController,
                         maxLines: 2,
-                        decoration: const InputDecoration(labelText: l10n.notes),
+                        decoration: InputDecoration(labelText: l10n.notes),
                       ),
                       if (error != null) ...[
                         const SizedBox(height: 12),
@@ -262,6 +262,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
   }
 
   Future<void> _delete(ExpenseModel expense) async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
