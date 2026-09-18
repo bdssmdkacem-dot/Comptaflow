@@ -37,9 +37,10 @@ class InvoiceRepository {
     _validate(items);
 
     final normalizedClientId = clientId?.trim();
+    Map<String, dynamic>? buyer;
     if (normalizedClientId != null && normalizedClientId.isNotEmpty) {
-      final ownedClient = await client.from('clients').select('id').eq('id', normalizedClientId).eq('user_id', user.id).maybeSingle();
-      if (ownedClient == null) throw StateError('Client not found or not owned by current user');
+      buyer = await client.from('clients').select('id,name,ice,if_number,rc_number,tp_number,phone,email,address,city').eq('id', normalizedClientId).eq('user_id', user.id).maybeSingle();
+      if (buyer == null) throw StateError('Client not found or not owned by current user');
     }
 
     final number = invoiceNumber?.trim().isNotEmpty == true ? invoiceNumber!.trim() : await nextInvoiceNumber();
@@ -48,7 +49,36 @@ class InvoiceRepository {
     final totalTtc = totalHt + totalTva;
     final profileRows = await client.from('profiles').select('full_name,company_name,ice,if_number,rc_number,tp_number,company_address,city,phone,email,payment_terms').eq('user_id', user.id).limit(1);
     final profile = profileRows.isEmpty ? <String, dynamic>{} : Map<String, dynamic>.from(profileRows.first);
-    final row = await client.from('invoices').insert({'user_id': user.id, 'client_id': normalizedClientId?.isEmpty == true ? null : normalizedClientId, 'invoice_number': number, 'date': date.toIso8601String().split('T').first, 'total_ht': totalHt, 'total_tva': totalTva, 'total_ttc': totalTtc, 'status': 'draft', 'seller_name': _first(profile['company_name'], profile['full_name']), 'seller_ice': profile['ice'], 'seller_if': profile['if_number'], 'seller_rc': profile['rc_number'], 'seller_tp': profile['tp_number'], 'seller_address': profile['company_address'], 'seller_city': profile['city'], 'seller_phone': profile['phone'], 'seller_email': profile['email'] ?? user.email, 'payment_terms': profile['payment_terms']}).select().single();
+    final row = await client.from('invoices').insert({
+      'user_id': user.id,
+      'client_id': normalizedClientId?.isEmpty == true ? null : normalizedClientId,
+      'invoice_number': number,
+      'date': date.toIso8601String().split('T').first,
+      'total_ht': totalHt,
+      'total_tva': totalTva,
+      'total_ttc': totalTtc,
+      'status': 'draft',
+      'seller_name': _first(profile['company_name'], profile['full_name']),
+      'seller_ice': profile['ice'],
+      'seller_if': profile['if_number'],
+      'seller_rc': profile['rc_number'],
+      'seller_tp': profile['tp_number'],
+      'seller_address': profile['company_address'],
+      'seller_city': profile['city'],
+      'seller_phone': profile['phone'],
+      'seller_email': profile['email'] ?? user.email,
+      'payment_terms': profile['payment_terms'],
+      'buyer_name': buyer?['name'],
+      'buyer_ice': buyer?['ice'],
+      'buyer_if': buyer?['if_number'],
+      'buyer_rc': buyer?['rc_number'],
+      'buyer_tp': buyer?['tp_number'],
+      'buyer_address': buyer?['address'],
+      'buyer_city': buyer?['city'],
+      'buyer_phone': buyer?['phone'],
+      'buyer_email': buyer?['email'],
+    }).select().single();
+
     final invoice = InvoiceModel.fromMap(Map<String, dynamic>.from(row));
     try {
       await client.from('invoice_items').insert(items.map((item) => {'invoice_id': invoice.id, 'description': item.description.trim(), 'quantity': item.quantity, 'unit_price': item.unitPrice, 'tax_rate': item.taxRate}).toList());
@@ -68,23 +98,13 @@ class InvoiceRepository {
       throw ArgumentError('Client id cannot be empty; use null for no client');
     }
 
-    await client.rpc(
-      'update_draft_invoice',
-      params: {
-        'p_invoice_id': invoiceId,
-        'p_invoice_number': invoiceNumber.trim(),
-        'p_client_id': normalizedClientId,
-        'p_date': date.toIso8601String().split('T').first,
-        'p_items': items
-            .map((item) => {
-                  'description': item.description.trim(),
-                  'quantity': item.quantity,
-                  'unit_price': item.unitPrice,
-                  'tax_rate': item.taxRate,
-                })
-            .toList(),
-      },
-    );
+    await client.rpc('update_draft_invoice', params: {
+      'p_invoice_id': invoiceId,
+      'p_invoice_number': invoiceNumber.trim(),
+      'p_client_id': normalizedClientId,
+      'p_date': date.toIso8601String().split('T').first,
+      'p_items': items.map((item) => {'description': item.description.trim(), 'quantity': item.quantity, 'unit_price': item.unitPrice, 'tax_rate': item.taxRate}).toList(),
+    });
   }
 
   Future<void> delete(String invoiceId) async {
