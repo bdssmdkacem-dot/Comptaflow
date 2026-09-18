@@ -296,6 +296,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.expenses),
@@ -437,6 +438,7 @@ class _EmptyExpenses extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -445,12 +447,12 @@ class _EmptyExpenses extends StatelessWidget {
           children: [
             const Icon(Icons.receipt_long_outlined, size: 64),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               l10n.noExpenses,
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               l10n.addFirstExpense,
             ),
             const SizedBox(height: 16),
