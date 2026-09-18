@@ -121,7 +121,7 @@ List<InvoiceItemModel> _items(String invoiceId, {required int count}) {
 
 int _pageCount(Uint8List bytes) {
   final text = String.fromCharCodes(bytes);
-  return RegExp(r'/Type\\s*/Page(?:\\s|>)').allMatches(text).length;
+  return RegExp(r'/Type\s*/Page(?:\s|>)').allMatches(text).length;
 }
 
 Future<void> _save(String name, Uint8List bytes) async {
