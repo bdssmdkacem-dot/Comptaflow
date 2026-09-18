@@ -2,11 +2,12 @@ import '../../core/services/supabase_client.dart';
 import '../models/invoice.dart';
 
 class InvoiceLineInput {
-  const InvoiceLineInput({required this.description, required this.quantity, required this.unitPrice, this.taxRate = 0});
+  const InvoiceLineInput({required this.description, required this.quantity, required this.unitPrice, this.taxRate = 0, this.productId});
   final String description;
   final double quantity;
   final double unitPrice;
   final double taxRate;
+  final String? productId;
   double get totalHt => quantity * unitPrice;
   double get totalTva => totalHt * taxRate / 100;
   double get totalTtc => totalHt + totalTva;
@@ -81,7 +82,7 @@ class InvoiceRepository {
 
     final invoice = InvoiceModel.fromMap(Map<String, dynamic>.from(row));
     try {
-      await client.from('invoice_items').insert(items.map((item) => {'invoice_id': invoice.id, 'description': item.description.trim(), 'quantity': item.quantity, 'unit_price': item.unitPrice, 'tax_rate': item.taxRate}).toList());
+      await client.from('invoice_items').insert(items.map((item) => {'invoice_id': invoice.id, 'product_id': item.productId, 'description': item.description.trim(), 'quantity': item.quantity, 'unit_price': item.unitPrice, 'tax_rate': item.taxRate}).toList());
     } catch (error) {
       await client.from('invoices').delete().eq('id', invoice.id);
       rethrow;
@@ -103,7 +104,7 @@ class InvoiceRepository {
       'p_invoice_number': invoiceNumber.trim(),
       'p_client_id': normalizedClientId,
       'p_date': date.toIso8601String().split('T').first,
-      'p_items': items.map((item) => {'description': item.description.trim(), 'quantity': item.quantity, 'unit_price': item.unitPrice, 'tax_rate': item.taxRate}).toList(),
+      'p_items': items.map((item) => {'description': item.description.trim(), 'quantity': item.quantity, 'unit_price': item.unitPrice, 'tax_rate': item.taxRate, 'product_id': item.productId}).toList(),
     });
   }
 
