@@ -276,7 +276,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                         valueListenable: selectedClientId,
                         builder: (context, value, _) => DropdownButtonFormField<String>(
                           initialValue: value,
-                          decoration: const InputDecoration(labelText: AppLocalizations.of(context).client),
+                          decoration: InputDecoration(labelText: AppLocalizations.of(context).client),
                           items: clients
                               .map((client) => DropdownMenuItem(value: client.id, child: Text(client.name)))
                               .toList(),
@@ -307,7 +307,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                                 ),
                                 DropdownButtonFormField<ProductModel>(
                                   initialValue: line.product,
-                                  decoration: const InputDecoration(labelText: AppLocalizations.of(context).productService),
+                                  decoration: InputDecoration(labelText: AppLocalizations.of(context).productService),
                                   items: products
                                       .map((product) => DropdownMenuItem(value: product, child: Text(product.name)))
                                       .toList(),
@@ -318,15 +318,15 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                                 ),
                                 TextField(
                                   controller: line.description,
-                                  decoration: const InputDecoration(labelText: AppLocalizations.of(context).description),
+                                  decoration: InputDecoration(labelText: AppLocalizations.of(context).description),
                                 ),
                                 Row(
                                   children: [
-                                    Expanded(child: TextField(controller: line.quantity, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: AppLocalizations.of(context).quantityShort))),
+                                    Expanded(child: TextField(controller: line.quantity, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: InputDecoration(labelText: AppLocalizations.of(context).quantityShort))),
                                     const SizedBox(width: 8),
-                                    Expanded(child: TextField(controller: line.price, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: AppLocalizations.of(context).unitPriceHt))),
+                                    Expanded(child: TextField(controller: line.price, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: InputDecoration(labelText: AppLocalizations.of(context).unitPriceHt))),
                                     const SizedBox(width: 8),
-                                    Expanded(child: TextField(controller: line.tax, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: AppLocalizations.of(context).taxPercent))),
+                                    Expanded(child: TextField(controller: line.tax, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: InputDecoration(labelText: AppLocalizations.of(context).taxPercent))),
                                   ],
                                 ),
                               ],
@@ -420,7 +420,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _createInvoice,
         icon: const Icon(Icons.add),
-        label: const Text(AppLocalizations.of(context).newInvoice),
+        label: Text(AppLocalizations.of(context).newInvoice),
       ),
       body: FutureBuilder<List<InvoiceModel>>(
         future: _future,
@@ -500,7 +500,7 @@ class _InvoiceDetailsSheet extends StatelessWidget {
               Text('${AppLocalizations.of(context).totalTva} : ${details.totalTva.toStringAsFixed(2)} MAD'),
               Text('${AppLocalizations.of(context).totalTtc} : ${details.totalTtc.toStringAsFixed(2)} MAD', style: const TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
-              if (onEdit != null) FilledButton.icon(onPressed: onEdit, icon: const Icon(Icons.edit), label: const Text(AppLocalizations.of(context).editInvoice)),
+              if (onEdit != null) FilledButton.icon(onPressed: onEdit, icon: const Icon(Icons.edit), label: Text(AppLocalizations.of(context).editInvoice)),
               if (onIssue != null) FilledButton.icon(onPressed: onIssue, icon: const Icon(Icons.check_circle_outline), label: Text(AppLocalizations.of(context).issue)),
               if (onDelete != null) OutlinedButton.icon(onPressed: onDelete, icon: const Icon(Icons.delete_outline), label: Text(AppLocalizations.of(context).delete)),
               OutlinedButton.icon(onPressed: onPreview, icon: const Icon(Icons.picture_as_pdf_outlined), label: Text(AppLocalizations.of(context).previewPdf)),
