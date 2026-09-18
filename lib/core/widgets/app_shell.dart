@@ -27,6 +27,15 @@ class AppShell extends StatelessWidget {
         NavigationDestination(icon: const Icon(Icons.settings_outlined), selectedIcon: const Icon(Icons.settings_rounded), label: l10n.settings),
       ];
 
+  Widget _constrainedBody(BuildContext context) {
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: AppColors.contentMaxWidth),
+        child: body,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -37,7 +46,7 @@ class AppShell extends StatelessWidget {
         final wide = constraints.maxWidth >= 900;
         if (!wide) {
           return Scaffold(
-            body: body,
+            body: _constrainedBody(context),
             bottomNavigationBar: NavigationBar(
               selectedIndex: index,
               onDestinationSelected: onIndexChanged,
@@ -80,7 +89,7 @@ class AppShell extends StatelessWidget {
                 ],
               ),
               const VerticalDivider(width: 1),
-              Expanded(child: body),
+              Expanded(child: _constrainedBody(context)),
             ],
           ),
         );
