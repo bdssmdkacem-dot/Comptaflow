@@ -49,25 +49,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       body: pages[_index],
     );
   }
-
-  String _label(AppLocalizations l10n) {
-    switch (_index) {
-      case 1:
-        return l10n.invoices;
-      case 2:
-        return l10n.expenses;
-      case 3:
-        return l10n.clients;
-      case 4:
-        return l10n.productsServices;
-      case 5:
-        return l10n.cpu;
-      case 6:
-        return l10n.settings;
-      default:
-        return l10n.dashboard;
-    }
-  }
 }
 
 class _DashboardData {
@@ -756,3 +737,102 @@ class _CountItem extends StatelessWidget {
 
   final IconData icon;
   final String label;
+  final int value;
+
+  @override
+  Widget build(BuildContext context) => Column(
+        children: [
+          Icon(icon, size: 21, color: AppColors.accent),
+          const SizedBox(height: 7),
+          Text(
+            '$value',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ],
+      );
+}
+
+class _SummaryCard extends StatelessWidget {
+  const _SummaryCard({required this.metrics});
+
+  final _Metrics metrics;
+
+  @override
+  Widget build(BuildContext context) => Card(
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.accent.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.account_balance_outlined, size: 19, color: AppColors.accent),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Synthèse TVA',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              _SummaryRow(label: 'TVA collectée', value: metrics.vatCollected),
+              _SummaryRow(label: 'TVA sur dépenses', value: metrics.vatOnExpenses),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 7),
+                child: Divider(height: 1),
+              ),
+              _SummaryRow(label: 'TVA nette estimée', value: metrics.netVat, bold: true),
+              const SizedBox(height: 6),
+              Text(
+                'Indicateur de gestion, pas un calcul fiscal officiel.',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+}
+
+class _SummaryRow extends StatelessWidget {
+  const _SummaryRow({required this.label, required this.value, this.bold = false});
+
+  final String label;
+  final double value;
+  final bool bold;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = Theme.of(context).textTheme.bodyMedium?.copyWith(
+          fontWeight: bold ? FontWeight.w800 : null,
+        );
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Expanded(child: Text(label, style: style)),
+          Text('${value.toStringAsFixed(2)} DH', style: style),
+        ],
+      ),
+    );
+  }
+}
