@@ -426,7 +426,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
         future: _future,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
-          if (snapshot.hasError) return Center(child: Text('Erreur : ${snapshot.error}'));
+          if (snapshot.hasError) return Center(child: Text('${AppLocalizations.of(context).errorPrefix} : ${snapshot.error}'));
           final invoices = snapshot.data ?? [];
           if (invoices.isEmpty) return Center(child: Text(AppLocalizations.of(context).noInvoices));
           return RefreshIndicator(
