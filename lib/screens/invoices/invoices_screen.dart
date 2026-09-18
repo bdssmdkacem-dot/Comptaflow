@@ -238,7 +238,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
     if (details != null) {
       for (final item in details.items) {
         final line = _InvoiceDraftLine();
-        line.product = item.productId == null ? null : products.where((p) => p.id == item.productId).firstOrNull;
+        line.product = item.productId == null ? null : products.where((p) => p.id == item.productId).isEmpty ? null : products.firstWhere((p) => p.id == item.productId);
         line.description.text = item.description;
         line.quantity.text = item.quantity.toString();
         line.price.text = item.unitPrice.toStringAsFixed(2);
