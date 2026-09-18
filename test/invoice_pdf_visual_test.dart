@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:comptaflow/core/services/invoice_pdf_service.dart';
@@ -5,6 +6,7 @@ import 'package:comptaflow/data/models/invoice.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   const service = InvoicePdfService();
 
   group('Invoice PDF visual smoke cases', () {
@@ -23,6 +25,8 @@ void main() {
       expect(bytes, isA<Uint8List>());
       expect(bytes.length, greaterThan(1000));
       expect(_pageCount(bytes), greaterThanOrEqualTo(1));
+      await _save('french-invoice.pdf', bytes);
+      await _save('arabic-invoice.pdf', bytes);
     });
 
     test('French invoice generates non-empty PDF with seller and buyer data', () async {
@@ -55,6 +59,7 @@ void main() {
       final bytes = await service.build(invoice: invoice, details: details, languageCode: 'fr');
       expect(bytes.length, greaterThan(5000));
       expect(_pageCount(bytes), greaterThan(1));
+      await _save('long-invoice.pdf', bytes);
     });
   });
 }
@@ -116,7 +121,11 @@ List<InvoiceItemModel> _items(String invoiceId, {required int count}) {
 
 int _pageCount(Uint8List bytes) {
   final text = String.fromCharCodes(bytes);
-  final matches = RegExp(r'/Type\\s*/Pages[\\s\\S]{0,3000}?/Count\\s+(\\d+)').allMatches(text);
-  if (matches.isEmpty) return 0;
-  return matches.map((match) => int.tryParse(match.group(1) ?? '') ?? 0).reduce((a, b) => a > b ? a : b);
+  return RegExp(r'/Type\\s*/Page(?:\\s|>)').allMatches(text).length;
+}
+
+Future<void> _save(String name, Uint8List bytes) async {
+  final directory = Directory('test_output');
+  await directory.create(recursive: true);
+  await File('${directory.path}/$name').writeAsBytes(bytes, flush: true);
 }
