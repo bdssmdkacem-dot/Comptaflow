@@ -109,7 +109,13 @@
   "addExpense": "Ajouter une dépense",
   "saveExpense": "Enregistrer",
   "deleteExpenseTitle": "Supprimer la dépense ?",
-  "@deleteExpenseMessage": {"placeholders": {"description": {"type": "String"}}},
+  "@deleteExpenseMessage": {
+    "placeholders": {
+      "description": {
+        "type": "String"
+      }
+    }
+  },
   "deleteExpenseMessage": "Cette action supprimera « {description} ».",
   "deleteExpense": "Supprimer",
   "refresh": "Actualiser",
@@ -145,7 +151,13 @@
   "invoiceNumber": "N° facture",
   "autoInvoiceNumber": "Laisser vide pour numérotation automatique",
   "client": "Client",
-  "@line": {"placeholders": {"number": {"type": "int"}}},
+  "@line": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
   "line": "Ligne {number}",
   "productService": "Produit / service",
   "quantityShort": "Qté",
@@ -160,12 +172,24 @@
   "createInvoice": "Créer",
   "noInvoices": "Aucune facture.",
   "deleteInvoiceTitle": "Supprimer la facture ?",
-  "@deleteInvoiceMessage": {"placeholders": {"number": {"type": "String"}}},
+  "@deleteInvoiceMessage": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
   "deleteInvoiceMessage": "La facture {number} sera supprimée définitivement.",
   "issueInvoiceError": "Impossible d’émettre la facture",
   "deleteInvoiceError": "Impossible de supprimer la facture",
   "pdfError": "Erreur PDF",
-  "@savePdfSecure": {"placeholders": {"path": {"type": "String"}}},
+  "@savePdfSecure": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
   "savePdfSecure": "PDF enregistré de façon sécurisée.\n{path}",
   "savePdfError": "Impossible d’enregistrer le PDF",
   "printError": "Erreur impression",
@@ -180,5 +204,13 @@
   "statusIssued": "Émise",
   "statusPaid": "Payée",
   "statusCancelled": "Annulée",
-  "invoiceStatusUnknown": "Inconnu"
+  "invoiceStatusUnknown": "Inconnu",
+  "caInvoiced": "CA facturé",
+  "collectedAmount": "encaissés",
+  "evolution": "Évolution",
+  "vsPreviousPeriod": "vs période précédente",
+  "yourActivity": "Votre activité",
+  "invoicesCount": "Factures",
+  "vatSummary": "Synthèse TVA",
+  "vatManagementNote": "Indicateur de gestion, pas un calcul fiscal officiel."
 }
