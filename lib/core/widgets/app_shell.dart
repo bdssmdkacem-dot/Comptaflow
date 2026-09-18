@@ -75,7 +75,7 @@ class AppShell extends StatelessWidget {
                     NavigationRailDestination(
                       icon: destination.icon,
                       selectedIcon: destination.selectedIcon,
-                      label: destination.label,
+                      label: Text(destination.label),
                     ),
                 ],
               ),
