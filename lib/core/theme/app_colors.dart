@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// ComptaFlow — Élégant & Premium color palette.
-///
-/// Keep brand colors centralized so feature screens can evolve without
-/// duplicating visual decisions or touching business logic.
+/// ComptaFlow design tokens. Keep visual decisions centralized.
 abstract final class AppColors {
   static const primary = Color(0xFF0B6B5B);
   static const primaryDark = Color(0xFF075447);
@@ -21,4 +18,16 @@ abstract final class AppColors {
   static const success = Color(0xFF36B37E);
   static const warning = Color(0xFFE2A93B);
   static const error = Color(0xFFE05A5A);
+
+  static const double radiusSm = 10;
+  static const double radiusMd = 14;
+  static const double radiusLg = 18;
+  static const double radiusXl = 22;
+
+  static const double spaceXs = 4;
+  static const double spaceSm = 8;
+  static const double spaceMd = 12;
+  static const double spaceLg = 16;
+  static const double spaceXl = 24;
+  static const double contentMaxWidth = 1180;
 }
