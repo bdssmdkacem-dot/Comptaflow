@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../core/widgets/app_shell.dart';
 import '../../data/models/expense.dart';
 import '../../data/models/invoice.dart';
 import '../../data/repositories/client_repo.dart';
@@ -42,53 +43,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       const SettingsScreen(),
     ];
 
-    return Scaffold(
-      appBar: _index == 0
-          ? null
-          : AppBar(title: Text(_label(l10n))),
+    return AppShell(
+      index: _index,
+      onIndexChanged: (value) => setState(() => _index = value),
       body: pages[_index],
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: (value) => setState(() => _index = value),
-        labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
-        destinations: [
-          NavigationDestination(
-            icon: const Icon(Icons.dashboard_outlined),
-            selectedIcon: const Icon(Icons.dashboard_rounded),
-            label: l10n.dashboard,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.receipt_long_outlined),
-            selectedIcon: const Icon(Icons.receipt_long_rounded),
-            label: l10n.invoices,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.payments_outlined),
-            selectedIcon: const Icon(Icons.payments_rounded),
-            label: l10n.expenses,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.people_outline),
-            selectedIcon: const Icon(Icons.people_rounded),
-            label: l10n.clients,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.inventory_2_outlined),
-            selectedIcon: const Icon(Icons.inventory_2_rounded),
-            label: l10n.productsServices,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.calculate_outlined),
-            selectedIcon: const Icon(Icons.calculate_rounded),
-            label: l10n.cpu,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.settings_outlined),
-            selectedIcon: const Icon(Icons.settings_rounded),
-            label: l10n.settings,
-          ),
-        ],
-      ),
     );
   }
 
@@ -798,102 +756,3 @@ class _CountItem extends StatelessWidget {
 
   final IconData icon;
   final String label;
-  final int value;
-
-  @override
-  Widget build(BuildContext context) => Column(
-        children: [
-          Icon(icon, size: 21, color: AppColors.accent),
-          const SizedBox(height: 7),
-          Text(
-            '$value',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppColors.textSecondary,
-            ),
-          ),
-        ],
-      );
-}
-
-class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({required this.metrics});
-
-  final _Metrics metrics;
-
-  @override
-  Widget build(BuildContext context) => Card(
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.accent.withValues(alpha: 0.10),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(Icons.account_balance_outlined, size: 19, color: AppColors.accent),
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    'Synthèse TVA',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              _SummaryRow(label: 'TVA collectée', value: metrics.vatCollected),
-              _SummaryRow(label: 'TVA sur dépenses', value: metrics.vatOnExpenses),
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 7),
-                child: Divider(height: 1),
-              ),
-              _SummaryRow(label: 'TVA nette estimée', value: metrics.netVat, bold: true),
-              const SizedBox(height: 6),
-              Text(
-                'Indicateur de gestion, pas un calcul fiscal officiel.',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-}
-
-class _SummaryRow extends StatelessWidget {
-  const _SummaryRow({required this.label, required this.value, this.bold = false});
-
-  final String label;
-  final double value;
-  final bool bold;
-
-  @override
-  Widget build(BuildContext context) {
-    final style = Theme.of(context).textTheme.bodyMedium?.copyWith(
-          fontWeight: bold ? FontWeight.w800 : null,
-        );
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          Expanded(child: Text(label, style: style)),
-          Text('${value.toStringAsFixed(2)} DH', style: style),
-        ],
-      ),
-    );
-  }
-}
