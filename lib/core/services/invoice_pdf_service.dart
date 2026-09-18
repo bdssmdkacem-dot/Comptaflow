@@ -25,23 +25,31 @@ class InvoicePdfService {
     ClientModel? client,
     String? ownerEmail,
     String languageCode = 'fr',
+    bool compress = true,
   }) async {
     client ??= _snapshotClient(invoice) ?? await _resolveClient(invoice);
 
     final isArabic = languageCode.toLowerCase().startsWith('ar');
     late final pw.Font baseFont;
     late final pw.Font boldFont;
+    late final pw.Font italicFont;
+    late final pw.Font boldItalicFont;
     pw.Font? latinFallback;
     if (isArabic) {
       baseFont = await PdfGoogleFonts.notoSansArabicRegular();
       boldFont = await PdfGoogleFonts.notoSansArabicBold();
+      italicFont = baseFont;
+      boldItalicFont = boldFont;
       latinFallback = await PdfGoogleFonts.notoSansRegular();
     } else {
       baseFont = await PdfGoogleFonts.notoSansRegular();
       boldFont = await PdfGoogleFonts.notoSansBold();
+      italicFont = await PdfGoogleFonts.notoSansItalic();
+      boldItalicFont = await PdfGoogleFonts.notoSansBoldItalic();
     }
 
     final document = pw.Document(
+      compress: compress,
       title: isArabic ? 'فاتورة ${invoice.invoiceNumber}' : 'Facture ${invoice.invoiceNumber}',
       author: invoice.sellerName?.isNotEmpty == true ? invoice.sellerName! : 'ComptaFlow',
       subject: isArabic ? 'فاتورة ${invoice.invoiceNumber}' : 'Facture ${invoice.invoiceNumber}',
@@ -62,6 +70,8 @@ class InvoicePdfService {
         theme: pw.ThemeData.withFont(
           base: baseFont,
           bold: boldFont,
+          italic: italicFont,
+          boldItalic: boldItalicFont,
           fontFallback: latinFallback == null ? const [] : [latinFallback],
         ),
         margin: const pw.EdgeInsets.fromLTRB(40, 38, 40, 42),
