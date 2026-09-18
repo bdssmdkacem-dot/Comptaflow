@@ -498,11 +498,11 @@ class InvoicePdfService {
 
   String _bidi(String value, String languageCode) {
     if (languageCode.toLowerCase().startsWith('ar')) {
-      final hasArabic = RegExp(r'[\\u0600-\\u06FF\\u0750-\\u077F\\u08A0-\\u08FF]').hasMatch(value);
-      if (!hasArabic) return '\\u200E$value\\u200E';
+      final hasArabic = RegExp(r'[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]').hasMatch(value);
+      if (!hasArabic) return '\u200E$value\u200E';
       return value.replaceAllMapped(
-        RegExp(r'[A-Za-z0-9@._+/:#%\\-][A-Za-z0-9@._+/:#%\\- ]*'),
-        (match) => '\\u200E${match.group(0)}\\u200E',
+        RegExp(r'[A-Za-z0-9@._+/:#%\-][A-Za-z0-9@._+/:#%\- ]*'),
+        (match) => '\u200E${match.group(0)}\u200E',
       );
     }
     return value;
