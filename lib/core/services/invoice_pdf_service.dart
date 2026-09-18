@@ -87,8 +87,8 @@ class InvoicePdfService {
                 child: pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
-                    pw.Text(sellerName, style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: _brand)),
-                    pw.Text(invoice.invoiceNumber, style: const pw.TextStyle(fontSize: 8, color: _muted)),
+                    pw.Text(_bidi(sellerName, languageCode), style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: _brand)),
+                    pw.Text(_bidi(invoice.invoiceNumber, languageCode), style: const pw.TextStyle(fontSize: 8, color: _muted)),
                   ],
                 ),
               ),
@@ -101,7 +101,7 @@ class InvoicePdfService {
           child: pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
-              pw.Text(isArabic ? 'تم الإنشاء بواسطة ComptaFlow' : 'Généré avec ComptaFlow', style: const pw.TextStyle(fontSize: 7.5, color: _muted)),
+              pw.Text(_bidi(isArabic ? 'تم الإنشاء بواسطة ComptaFlow' : 'Généré avec ComptaFlow', languageCode), style: const pw.TextStyle(fontSize: 7.5, color: _muted)),
               pw.Text('Page ${context.pageNumber} / ${context.pagesCount}', style: const pw.TextStyle(fontSize: 7.5, color: _muted)),
             ],
           ),
@@ -132,7 +132,7 @@ class InvoicePdfService {
                 border: pw.Border.all(color: _line, width: 0.6),
                 borderRadius: pw.BorderRadius.circular(7),
               ),
-              child: pw.Text(invoice.paymentTerms!.trim(), style: const pw.TextStyle(fontSize: 8.5, color: _ink)),
+              child: pw.Text(_bidi(invoice.paymentTerms!.trim(), languageCode), style: const pw.TextStyle(fontSize: 8.5, color: _ink)),
             ),
           ],
           pw.SizedBox(height: 22),
@@ -186,7 +186,7 @@ class InvoicePdfService {
                     ),
                     if (contact.isNotEmpty) ...[
                       pw.SizedBox(height: 5),
-                      ...contact.map((value) => pw.Text(value, style: const pw.TextStyle(fontSize: 8.5, color: _muted))),
+                      ...contact.map((value) => pw.Text(_bidi(value, languageCode), style: const pw.TextStyle(fontSize: 8.5, color: _muted))),
                     ],
                     if (legal.isNotEmpty) ...[
                       pw.SizedBox(height: 7),
@@ -194,7 +194,7 @@ class InvoicePdfService {
                         spacing: 10,
                         runSpacing: 3,
                         children: legal
-                            .map((value) => pw.Text(value, style: const pw.TextStyle(fontSize: 7.5, color: _muted)))
+                            .map((value) => pw.Text(_bidi(value, languageCode), style: const pw.TextStyle(fontSize: 7.5, color: _muted)))
                             .toList(),
                       ),
                     ],
@@ -215,7 +215,7 @@ class InvoicePdfService {
                   children: [
                     pw.Text(languageCode == 'ar' ? 'فاتورة' : 'FACTURE', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: _brand)),
                     pw.SizedBox(height: 4),
-                    pw.Text(invoice.invoiceNumber, style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: _ink)),
+                    pw.Text(_bidi(invoice.invoiceNumber, languageCode), style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: _ink)),
                     pw.SizedBox(height: 6),
                     pw.Text(languageCode == 'ar' ? 'تاريخ الإصدار' : 'Date d’émission', style: const pw.TextStyle(fontSize: 7.5, color: _muted)),
                     pw.SizedBox(height: 2),
@@ -268,7 +268,7 @@ class InvoicePdfService {
               children: [
                 pw.Text(languageCode == 'ar' ? 'الفاتورة إلى' : 'FACTURÉ À', style: pw.TextStyle(fontSize: 7.5, fontWeight: pw.FontWeight.bold, color: _brand)),
                 pw.SizedBox(height: 4),
-                pw.Text(name, style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: _ink)),
+                pw.Text(_bidi(name, languageCode), style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: _ink)),
                 if (details.isNotEmpty) ...[
                   pw.SizedBox(height: 3),
                   ...details.map((value) => pw.Text(value, style: const pw.TextStyle(fontSize: 8, color: _muted))),
@@ -495,6 +495,18 @@ class InvoicePdfService {
   String _date(DateTime value) => '${value.day.toString().padLeft(2, '0')}/${value.month.toString().padLeft(2, '0')}/${value.year}';
 
   String _number(double value) => value.toStringAsFixed(2);
+
+  String _bidi(String value, String languageCode) {
+    if (languageCode.toLowerCase().startsWith('ar')) {
+      final hasArabic = RegExp(r'[\\u0600-\\u06FF\\u0750-\\u077F\\u08A0-\\u08FF]').hasMatch(value);
+      if (!hasArabic) return '\\u200E$value\\u200E';
+      return value.replaceAllMapped(
+        RegExp(r'[A-Za-z0-9@._+/:#%\\-][A-Za-z0-9@._+/:#%\\- ]*'),
+        (match) => '\\u200E${match.group(0)}\\u200E',
+      );
+    }
+    return value;
+  }
 
   String _statusLabel(String status, String languageCode) {
     if (languageCode == 'ar') {
