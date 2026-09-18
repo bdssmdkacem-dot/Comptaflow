@@ -1,6 +1,54 @@
 -- Final QA: invoice ownership, duplicate numbers, immutable stock history,
 -- product-linked invoice lines, and atomic stock deduction on issue.
 
+create or replace function public.update_draft_invoice(
+  p_invoice_id uuid,p_invoice_number text,p_client_id uuid,p_date date,p_items jsonb
+) returns void language plpgsql security invoker set search_path=public as $
+declare
+  v_user_id uuid := auth.uid(); v_invoice public.invoices%rowtype;
+  v_client public.clients%rowtype; v_profile public.profiles%rowtype;
+  v_total_ht numeric(14,2); v_total_tva numeric(14,2); v_total_ttc numeric(14,2);
+begin
+  if v_user_id is null then raise exception 'Authentication required'; end if;
+  if p_invoice_number is null or btrim(p_invoice_number)='' then raise exception 'Invoice number is required'; end if;
+  if p_items is null or jsonb_typeof(p_items)<>'array' or jsonb_array_length(p_items)=0 then raise exception 'Invoice must contain at least one line'; end if;
+  select * into v_invoice from public.invoices where id=p_invoice_id and user_id=v_user_id and status='draft' for update;
+  if not found then raise exception 'Draft invoice not found or not owned by current user'; end if;
+  if p_client_id is null then raise exception 'Client is required'; end if;
+  select * into v_client from public.clients where id=p_client_id and user_id=v_user_id;
+  if not found then raise exception 'Client not found or not owned by current user'; end if;
+  select * into v_profile from public.profiles where user_id=v_user_id limit 1;
+  if exists (
+    select 1 from jsonb_array_elements(p_items) item
+    where coalesce(btrim(item->>'description'),'')=''
+       or coalesce((item->>'quantity')::numeric,0)<=0
+       or coalesce((item->>'unit_price')::numeric,-1)<0
+       or coalesce((item->>'tax_rate')::numeric,-1)<0
+       or coalesce((item->>'tax_rate')::numeric,101)>100
+       or (nullif(item->>'product_id','') is not null and not exists (
+            select 1 from public.products p where p.id=(item->>'product_id')::uuid and p.user_id=v_user_id))
+  ) then raise exception 'Invalid invoice line or product'; end if;
+  select round(coalesce(sum((item->>'quantity')::numeric*(item->>'unit_price')::numeric),0),2),
+         round(coalesce(sum((item->>'quantity')::numeric*(item->>'unit_price')::numeric*(item->>'tax_rate')::numeric/100),0),2)
+    into v_total_ht,v_total_tva from jsonb_array_elements(p_items) item;
+  v_total_ttc:=round(v_total_ht+v_total_tva,2);
+  update public.invoices set invoice_number=btrim(p_invoice_number),client_id=p_client_id,date=p_date,
+    total_ht=v_total_ht,total_tva=v_total_tva,total_ttc=v_total_ttc,
+    seller_name=coalesce(nullif(btrim(v_profile.company_name),''),nullif(btrim(v_profile.full_name),'')),
+    seller_ice=v_profile.ice,seller_if=v_profile.if_number,seller_rc=v_profile.rc_number,seller_tp=v_profile.tp_number,
+    seller_address=v_profile.company_address,seller_city=v_profile.city,seller_phone=v_profile.phone,
+    seller_email=coalesce(v_profile.email,(select email from auth.users where id=v_user_id)),
+    payment_terms=v_profile.payment_terms,buyer_name=v_client.name,buyer_ice=v_client.ice,buyer_if=v_client.if_number,
+    buyer_rc=v_client.rc_number,buyer_tp=v_client.tp_number,buyer_address=v_client.address,buyer_city=v_client.city,
+    buyer_phone=v_client.phone,buyer_email=v_client.email,updated_at=now()
+  where id=p_invoice_id and user_id=v_user_id and status='draft';
+  delete from public.invoice_items where invoice_id=p_invoice_id;
+  insert into public.invoice_items(invoice_id,product_id,description,quantity,unit_price,tax_rate)
+  select p_invoice_id,nullif(item->>'product_id','')::uuid,btrim(item->>'description'),
+         (item->>'quantity')::numeric,(item->>'unit_price')::numeric,(item->>'tax_rate')::numeric
+  from jsonb_array_elements(p_items) item;
+end; $;
+
 alter table public.invoice_items
   add column if not exists product_id uuid references public.products(id) on delete set null;
 
