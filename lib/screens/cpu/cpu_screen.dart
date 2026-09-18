@@ -124,8 +124,8 @@ class _CpuScreenState extends State<CpuScreen> {
         const SizedBox(height: 20),
         DropdownButtonFormField<String>(
           initialValue: _activity,
-          decoration: const InputDecoration(labelText: AppLocalizations.of(context).activity),
-          items: const [
+          decoration: InputDecoration(labelText: AppLocalizations.of(context).activity),
+          items: [
             DropdownMenuItem(value: 'services', child: Text(AppLocalizations.of(context).servicesRate)),
             DropdownMenuItem(value: 'artisanal', child: Text(AppLocalizations.of(context).artisanalRate)),
             DropdownMenuItem(value: 'commercial', child: Text(AppLocalizations.of(context).commercialRate)),
@@ -137,7 +137,7 @@ class _CpuScreenState extends State<CpuScreen> {
           controller: _ca,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           onChanged: (_) => setState(() {}),
-          decoration: const InputDecoration(labelText: AppLocalizations.of(context).cashCollectedCa, suffixText: 'MAD'),
+          decoration: InputDecoration(labelText: AppLocalizations.of(context).cashCollectedCa, suffixText: 'MAD'),
         ),
         const SizedBox(height: 12),
         OutlinedButton.icon(
