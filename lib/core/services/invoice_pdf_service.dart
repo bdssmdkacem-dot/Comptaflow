@@ -26,7 +26,7 @@ class InvoicePdfService {
     String? ownerEmail,
     String languageCode = 'fr',
   }) async {
-    client ??= await _resolveClient(invoice);
+    client ??= _snapshotClient(invoice) ?? await _resolveClient(invoice);
 
     final isArabic = languageCode.toLowerCase().startsWith('ar');
     pw.Font? baseFont;
@@ -428,6 +428,34 @@ class InvoicePdfService {
         title,
         style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: _ink),
       );
+
+  ClientModel? _snapshotClient(InvoiceModel invoice) {
+    final hasSnapshot = _has(invoice.buyerName) ||
+        _has(invoice.buyerIce) ||
+        _has(invoice.buyerIf) ||
+        _has(invoice.buyerRc) ||
+        _has(invoice.buyerTp) ||
+        _has(invoice.buyerAddress) ||
+        _has(invoice.buyerCity) ||
+        _has(invoice.buyerPhone) ||
+        _has(invoice.buyerEmail);
+    if (!hasSnapshot) return null;
+    return ClientModel(
+      id: invoice.clientId ?? 'snapshot',
+      userId: invoice.userId,
+      name: invoice.buyerName?.trim().isNotEmpty == true
+          ? invoice.buyerName!.trim()
+          : 'Client',
+      ice: invoice.buyerIce,
+      ifNumber: invoice.buyerIf,
+      rcNumber: invoice.buyerRc,
+      tpNumber: invoice.buyerTp,
+      address: invoice.buyerAddress,
+      city: invoice.buyerCity,
+      phone: invoice.buyerPhone,
+      email: invoice.buyerEmail,
+    );
+  }
 
   Future<ClientModel?> _resolveClient(InvoiceModel invoice) async {
     final clientId = invoice.clientId;
