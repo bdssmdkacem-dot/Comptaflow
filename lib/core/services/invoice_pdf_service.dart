@@ -29,8 +29,8 @@ class InvoicePdfService {
     client ??= _snapshotClient(invoice) ?? await _resolveClient(invoice);
 
     final isArabic = languageCode.toLowerCase().startsWith('ar');
-    pw.Font? baseFont;
-    pw.Font? boldFont;
+    late final pw.Font baseFont;
+    late final pw.Font boldFont;
     pw.Font? latinFallback;
     if (isArabic) {
       baseFont = await PdfGoogleFonts.notoSansArabicRegular();
@@ -59,13 +59,11 @@ class InvoicePdfService {
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         textDirection: isArabic ? pw.TextDirection.rtl : pw.TextDirection.ltr,
-        theme: baseFont == null
-          ? null
-          : pw.ThemeData.withFont(
-              base: baseFont,
-              bold: boldFont,
-              fontFallback: latinFallback == null ? const [] : [latinFallback],
-            ),
+        theme: pw.ThemeData.withFont(
+          base: baseFont,
+          bold: boldFont,
+          fontFallback: latinFallback == null ? const [] : [latinFallback],
+        ),
         margin: const pw.EdgeInsets.fromLTRB(40, 38, 40, 42),
         maxPages: 50,
         header: (context) => context.pageNumber == 1
