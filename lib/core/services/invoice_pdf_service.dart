@@ -87,8 +87,8 @@ class InvoicePdfService {
                 child: pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
-                    pw.Text(sellerName, style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: _brand)),
-                    pw.Text(invoice.invoiceNumber, style: const pw.TextStyle(fontSize: 8, color: _muted)),
+                    _text(sellerName, style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: _brand)),
+                    _text(invoice.invoiceNumber, style: const pw.TextStyle(fontSize: 8, color: _muted)),
                   ],
                 ),
               ),
@@ -101,8 +101,8 @@ class InvoicePdfService {
           child: pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
-              pw.Text(isArabic ? 'تم الإنشاء بواسطة ComptaFlow' : 'Généré avec ComptaFlow', style: const pw.TextStyle(fontSize: 7.5, color: _muted)),
-              pw.Text('Page ${context.pageNumber} / ${context.pagesCount}', style: const pw.TextStyle(fontSize: 7.5, color: _muted)),
+              _text(isArabic ? 'تم الإنشاء بواسطة ComptaFlow' : 'Généré avec ComptaFlow', style: const pw.TextStyle(fontSize: 7.5, color: _muted)),
+              _text('Page ${context.pageNumber} / ${context.pagesCount}', style: const pw.TextStyle(fontSize: 7.5, color: _muted)),
             ],
           ),
         ),
@@ -132,7 +132,7 @@ class InvoicePdfService {
                 border: pw.Border.all(color: _line, width: 0.6),
                 borderRadius: pw.BorderRadius.circular(7),
               ),
-              child: pw.Text(invoice.paymentTerms!.trim(), style: const pw.TextStyle(fontSize: 8.5, color: _ink)),
+              child: _text(invoice.paymentTerms!.trim(), style: const pw.TextStyle(fontSize: 8.5, color: _ink)),
             ),
           ],
           pw.SizedBox(height: 22),
@@ -180,13 +180,13 @@ class InvoicePdfService {
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    pw.Text(
+                    _text(
                       sellerName,
                       style: pw.TextStyle(fontSize: 21, fontWeight: pw.FontWeight.bold, color: _brandDark),
                     ),
                     if (contact.isNotEmpty) ...[
                       pw.SizedBox(height: 5),
-                      ...contact.map((value) => pw.Text(value, style: const pw.TextStyle(fontSize: 8.5, color: _muted))),
+                      ...contact.map((value) => _text(value, style: const pw.TextStyle(fontSize: 8.5, color: _muted))),
                     ],
                     if (legal.isNotEmpty) ...[
                       pw.SizedBox(height: 7),
@@ -194,7 +194,7 @@ class InvoicePdfService {
                         spacing: 10,
                         runSpacing: 3,
                         children: legal
-                            .map((value) => pw.Text(value, style: const pw.TextStyle(fontSize: 7.5, color: _muted)))
+                            .map((value) => _text(value, style: const pw.TextStyle(fontSize: 7.5, color: _muted)))
                             .toList(),
                       ),
                     ],
@@ -213,13 +213,13 @@ class InvoicePdfService {
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    pw.Text(languageCode == 'ar' ? 'فاتورة' : 'FACTURE', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: _brand)),
+                    _text(languageCode == 'ar' ? 'فاتورة' : 'FACTURE', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: _brand)),
                     pw.SizedBox(height: 4),
-                    pw.Text(invoice.invoiceNumber, style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: _ink)),
+                    _text(invoice.invoiceNumber, style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: _ink)),
                     pw.SizedBox(height: 6),
-                    pw.Text(languageCode == 'ar' ? 'تاريخ الإصدار' : 'Date d’émission', style: const pw.TextStyle(fontSize: 7.5, color: _muted)),
+                    _text(languageCode == 'ar' ? 'تاريخ الإصدار' : 'Date d’émission', style: const pw.TextStyle(fontSize: 7.5, color: _muted)),
                     pw.SizedBox(height: 2),
-                    pw.Text(date, style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: _ink)),
+                    _text(date, style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: _ink)),
                   ],
                 ),
               ),
@@ -266,12 +266,12 @@ class InvoicePdfService {
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                pw.Text(languageCode == 'ar' ? 'الفاتورة إلى' : 'FACTURÉ À', style: pw.TextStyle(fontSize: 7.5, fontWeight: pw.FontWeight.bold, color: _brand)),
+                _text(languageCode == 'ar' ? 'الفاتورة إلى' : 'FACTURÉ À', style: pw.TextStyle(fontSize: 7.5, fontWeight: pw.FontWeight.bold, color: _brand)),
                 pw.SizedBox(height: 4),
-                pw.Text(name, style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: _ink)),
+                _text(name, style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: _ink)),
                 if (details.isNotEmpty) ...[
                   pw.SizedBox(height: 3),
-                  ...details.map((value) => pw.Text(value, style: const pw.TextStyle(fontSize: 8, color: _muted))),
+                  ...details.map((value) => _text(value, style: const pw.TextStyle(fontSize: 8, color: _muted))),
                 ],
                 if (legal.isNotEmpty) ...[
                   pw.SizedBox(height: 5),
@@ -279,7 +279,7 @@ class InvoicePdfService {
                     spacing: 10,
                     runSpacing: 2,
                     children: legal
-                        .map((value) => pw.Text(value, style: const pw.TextStyle(fontSize: 7.5, color: _muted)))
+                        .map((value) => _text(value, style: const pw.TextStyle(fontSize: 7.5, color: _muted)))
                         .toList(),
                   ),
                 ],
@@ -330,7 +330,7 @@ class InvoicePdfService {
         pw.Expanded(
           child: pw.Padding(
             padding: const pw.EdgeInsets.only(top: 4, right: 20),
-            child: pw.Text(
+            child: _text(
               languageCode == 'ar' ? 'شكرًا لثقتكم.' : 'Merci pour votre confiance.',
               style: pw.TextStyle(fontSize: 8.5, color: _muted, fontStyle: pw.FontStyle.italic),
             ),
@@ -370,14 +370,14 @@ class InvoicePdfService {
             borderRadius: pw.BorderRadius.circular(12),
             border: pw.Border.all(color: _brand, width: 0.5),
           ),
-          child: pw.Text(
+          child: _text(
             _statusLabel(status, languageCode),
             style: pw.TextStyle(fontSize: 7.5, fontWeight: pw.FontWeight.bold, color: _brandDark),
           ),
         ),
         pw.SizedBox(width: 10),
         pw.Expanded(
-          child: pw.Text(
+          child: _text(
             languageCode == 'ar' ? 'مستند تجاري تم إنشاؤه بواسطة ComptaFlow.' : 'Document commercial généré par ComptaFlow.',
             style: const pw.TextStyle(fontSize: 7.5, color: _muted),
           ),
@@ -399,7 +399,7 @@ class InvoicePdfService {
           .map(
             (entry) => pw.Padding(
               padding: const pw.EdgeInsets.symmetric(horizontal: 7, vertical: 8),
-              child: pw.Text(
+              child: _text(
                 entry.value,
                 textAlign: entry.key == 0
                     ? (languageCode == 'ar' ? pw.TextAlign.right : pw.TextAlign.left)
@@ -422,7 +422,7 @@ class InvoicePdfService {
       child: pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
-          pw.Text(
+          _text(
             label,
             style: pw.TextStyle(
               fontSize: bold ? 10.5 : 8.5,
@@ -430,7 +430,7 @@ class InvoicePdfService {
               color: bold ? _brandDark : _muted,
             ),
           ),
-          pw.Text(
+          _text(
             '${_number(value)} DH',
             style: pw.TextStyle(
               fontSize: bold ? 11 : 8.5,
@@ -443,7 +443,21 @@ class InvoicePdfService {
     );
   }
 
-  pw.Widget _sectionTitle(String title) => pw.Text(
+  pw.Widget _text(
+    String value, {
+    pw.TextStyle? style,
+    pw.TextAlign? textAlign,
+  }) {
+    final hasRtl = RegExp(r'[\\u0600-\\u06FF\\u0750-\\u077F\\u08A0-\\u08FF]').hasMatch(value);
+    return pw.Text(
+      value,
+      textDirection: hasRtl ? pw.TextDirection.rtl : pw.TextDirection.ltr,
+      textAlign: textAlign,
+      style: style,
+    );
+  }
+
+  pw.Widget _sectionTitle(String title) => _text(
         title,
         style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: _ink),
       );
