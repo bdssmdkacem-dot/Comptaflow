@@ -22,11 +22,10 @@ void main() {
         status: 'issued',
       );
       final details = InvoiceDetails(invoice: invoice, items: _items(invoice.id, count: 3));
-      final bytes = await service.build(invoice: invoice, details: details, languageCode: 'ar');
+      final bytes = await service.build(invoice: invoice, details: details, languageCode: 'ar', compress: false);
       expect(bytes, isA<Uint8List>());
       expect(bytes.length, greaterThan(1000));
       expect(_pageCount(bytes), greaterThanOrEqualTo(1));
-      await _save('french-invoice.pdf', bytes);
       await _save('arabic-invoice.pdf', bytes);
     });
 
@@ -41,7 +40,7 @@ void main() {
         status: 'paid',
       );
       final details = InvoiceDetails(invoice: invoice, items: _items(invoice.id, count: 4));
-      final bytes = await service.build(invoice: invoice, details: details, languageCode: 'fr');
+      final bytes = await service.build(invoice: invoice, details: details, languageCode: 'fr', compress: false);
       expect(bytes.length, greaterThan(1000));
       expect(_pageCount(bytes), greaterThanOrEqualTo(1));
     });
@@ -57,7 +56,7 @@ void main() {
         status: 'issued',
       );
       final details = InvoiceDetails(invoice: invoice, items: _items(invoice.id, count: 55));
-      final bytes = await service.build(invoice: invoice, details: details, languageCode: 'fr');
+      final bytes = await service.build(invoice: invoice, details: details, languageCode: 'fr', compress: false);
       expect(bytes.length, greaterThan(5000));
       expect(_pageCount(bytes), greaterThan(1));
       await _save('long-invoice.pdf', bytes);
